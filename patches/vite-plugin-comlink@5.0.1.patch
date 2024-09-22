@@ -1,0 +1,34 @@
+diff --git a/symbol.js b/symbol.js
+index f01cbe79fa905a7abdaf39b1f97ac2ad652f2396..7aa6ba2985b0aa9d3db1f8fa3b52056e6b439d63 100644
+--- a/symbol.js
++++ b/symbol.js
+@@ -1,17 +1,14 @@
+-import { wrap as comlink_wrap } from "comlink";
+-export {
+-    proxy,
+-    proxyMarker,
+-    finalizer,
+-    releaseProxy,
+-    createEndpoint
+-} from 'comlink'
+-export const endpointSymbol = Symbol("getEndpoint");
++const { wrap: comlink_wrap } = require("comlink");
++const comlink = require('comlink');
++
++Object.assign(module.exports, comlink);
++
++const endpointSymbol = module.exports.endpointSymbol = Symbol("getEndpoint");
+
+ /**
+  * internal API
+  */
+-export const wrap = (ep) => {
++module.exports.wrap = (ep) => {
+     const wrapped = comlink_wrap(ep);
+     return new Proxy(wrapped, {
+       get(_target, prop, _receiver) {
+@@ -20,3 +17,4 @@ export const wrap = (ep) => {
+       }
+     });
+ }
++
