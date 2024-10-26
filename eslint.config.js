@@ -41,6 +41,9 @@ export default ts.config(
         extraFileExtensions: ['.svelte'],
         parser: ts.parser,
         svelteConfig: svelteConfig,
+        svelteFeatures: {
+          experimentalGenerics: true,
+        },
       },
     },
   },

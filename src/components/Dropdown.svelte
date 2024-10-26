@@ -1,9 +1,4 @@
 <script lang="ts" generics="Value extends string | number, Data">
-  /* eslint-disable no-undef, @typescript-eslint/no-explicit-any, @typescript-eslint/no-redundant-type-constituents */
-  type Val = Value | any;
-  type Da = Data | any;
-  /* eslint-enable */
-
   import {clsx} from 'clsx';
   import Fuse, {type IFuseOptions} from 'fuse.js';
   import * as Ri from 'radashi';
@@ -42,7 +37,7 @@
     setQuery: (query: string) => unknown;
   }
 
-  let {values = $bindable(), ...props}: tDropdownProps<Val, Da> = $props();
+  let {values = $bindable(), ...props}: tDropdownProps<Value, Data> = $props();
   let show = $state(false);
   let fuse = $derived(new Fuse(props.data, FUSE_OPTIONS));
   let query = $state('');
@@ -58,7 +53,7 @@
 
   let inputEl: HTMLInputElement;
 
-  const onClick = (value: Val) => {
+  const onClick = (value: Value) => {
     if (values.has(value)) {
       values.delete(value);
     } else {

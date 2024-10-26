@@ -1,7 +1,4 @@
 <script lang="ts" generics="Value extends string | number">
-  // eslint-disable-next-line no-undef, @typescript-eslint/no-explicit-any, @typescript-eslint/no-redundant-type-constituents
-  type Val = Value | any;
-
   import {Sortable, Plugins} from '@shopify/draggable';
 
   import {EImage} from '$lib/images';
@@ -11,17 +8,17 @@
     setList: (values: Value[]) => unknown;
   }
 
-  let props: tProps<Val> = $props();
+  let props: tProps<Value> = $props();
 
   const getList = () => {
     const elList = Array.from(
       document.querySelectorAll('[data-draggable-value]:not(.draggable-mirror,.draggable--original)').values(),
     );
 
-    return elList.map(el => el.getAttribute('data-draggable-value') ?? '') as Val[];
+    return elList.map(el => el.getAttribute('data-draggable-value') ?? '') as Value[];
   };
 
-  const onClose = (value: Val) => {
+  const onClose = (value: Value) => {
     props.setList(getList().filter(val => val !== value));
   };
 
