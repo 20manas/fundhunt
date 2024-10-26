@@ -1,12 +1,12 @@
 <script lang="ts">
-  import {createChart, ColorType, type ISeriesApi} from 'lightweight-charts';
+  import {createChart, ColorType, type ISeriesApi, type Time, type MouseEventHandler} from 'lightweight-charts';
 
+  import {waitForPaint} from '$lib/events';
   import {percentageFormatter} from '$lib/format';
   import type {TFund} from '$types/funds';
   import type {TXirrEntry} from '$types/rolling';
 
   import Legend from './Legend.svelte';
-
 
   const colors = [
     '#3cb49b',
@@ -77,7 +77,7 @@
 
     chart.timeScale().fitContent();
 
-    chart.subscribeCrosshairMove(param => {
+    const handleCrosshairMove: MouseEventHandler<Time> = param => {
       interface tSeriesItem {
         value: number;
         customValues: {
@@ -92,7 +92,9 @@
       for (const fund of legendData) {
         fund.value = map.get(fund.color)?.value ?? null;
       }
-    });
+    };
+
+    chart.subscribeCrosshairMove(handleCrosshairMove);
 
     const handleResize = () => chart.applyOptions({width: element.clientWidth});
 
@@ -135,8 +137,14 @@
     addData(data);
 
     return {
-      update: (data: tProps['data']) => {
+      update: async (data: tProps['data']) => {
+        chart.unsubscribeCrosshairMove(handleCrosshairMove);
+
         addData(data);
+
+        await waitForPaint();
+
+        chart.subscribeCrosshairMove(handleCrosshairMove);
       },
       destroy: () => {
         window.removeEventListener('resize', handleResize);
