@@ -64,7 +64,7 @@ export const getStats = (requestData: Readable<TStatsRequestData>) =>
         })),
     ),
     combine: resultList => ({
-      data: getCombinedData(resultList.map(result => result.data).filter(data => isNotUndefined(data))),
+      data: getCombinedData(resultList.map(result => result.data).filter(isNotUndefined)),
       isLoading: resultList.length > 0 && resultList.some(res => res.isLoading),
       isFetching: resultList.some(res => res.isFetching),
     }),

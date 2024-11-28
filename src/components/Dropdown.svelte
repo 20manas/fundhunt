@@ -124,10 +124,10 @@
       class={clsx('input', {['__readOnly']: props.hideSearch ?? props.isDisabled})}
       placeholder={props.placeholder}
       value={show ? query : ''}
-      oninput={ev => {
+      oninput={(ev: Event) => {
         query = (ev.target as HTMLInputElement).value;
       }}
-      onkeydown={ev => {
+      onkeydown={(ev: KeyboardEvent) => {
         if (ev.key !== 'Enter') return;
 
         updateQueryDebounced.flush((ev.target as HTMLInputElement).value);
