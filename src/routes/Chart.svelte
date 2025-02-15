@@ -1,5 +1,12 @@
 <script lang="ts">
-  import {createChart, ColorType, type ISeriesApi, type Time, type MouseEventHandler} from 'lightweight-charts';
+  import {
+    createChart,
+    ColorType,
+    type ISeriesApi,
+    type Time,
+    type MouseEventHandler,
+    AreaSeries,
+  } from 'lightweight-charts';
 
   import {waitForPaint} from '$lib/events';
   import {percentageFormatter} from '$lib/format';
@@ -107,7 +114,7 @@
       data.forEach((fund, i) => {
         const color = colors[i];
 
-        const newSeries = chart.addAreaSeries({
+        const newSeries = chart.addSeries(AreaSeries, {
           // title: series.name,
           lineWidth: 2,
           lineColor: color,
