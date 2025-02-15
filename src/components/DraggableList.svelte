@@ -1,14 +1,16 @@
-<script lang="ts" generics="Value extends string | number">
+<script lang="ts" generics="Data, Value extends string | number">
   import {Sortable, Plugins} from '@shopify/draggable';
+  import type {Snippet} from 'svelte';
 
   import {EImage} from '$lib/images';
 
-  interface tProps<Value> {
-    list: Array<{title: string; value: Value}>;
+  interface tProps<Data, Value> {
+    content: Snippet<[Data]>;
+    list: Array<{data: Data; value: Value}>;
     setList: (values: Value[]) => unknown;
   }
 
-  let props: tProps<Value> = $props();
+  let props: tProps<Data, Value> = $props();
 
   const getList = () => {
     const elList = Array.from(
@@ -46,7 +48,7 @@
 <ul use:addSortable>
   {#each props.list as item}
     <li class="item" data-draggable-value={item.value}>
-      <span class="title">{item.title}</span>
+      {@render props.content(item.data)}
       <img
         src={EImage.Drag}
         width={15}

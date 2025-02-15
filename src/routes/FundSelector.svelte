@@ -1,11 +1,12 @@
 <script lang="ts">
   import {SvelteMap, SvelteSet} from 'svelte/reactivity';
-  import {toStore} from 'svelte/store';
+  import {get, toStore} from 'svelte/store';
+  import {queryParam} from 'sveltekit-search-params';
 
   import DraggableList from '$components/DraggableList.svelte';
   import Dropdown from '$components/Dropdown.svelte';
-  import {isNotUndefined, isNullish} from '$lib/type';
-  import {type TFund} from '$types/funds';
+  import {isNotUndefined, isNull, isNullish} from '$lib/type';
+  import {EFundType, type TFund} from '$types/funds';
 
   import {getIndexFundList, queryMFApi} from './funds.svelte';
 
@@ -15,15 +16,49 @@
 
   let props: tProps = $props();
 
+  const fundTypeTitles: Record<EFundType, string> = {
+    [EFundType.Index]: 'Index',
+    [EFundType.MutualFund]: 'MF',
+  };
+
+  const encodeFundList = (fundList: TFund[]) => {
+    if (fundList.length === 0) return;
+
+    return fundList.map(fund => [fund.type, fund.value, fund.title].map(encodeURIComponent).join('::')).join(',');
+  };
+
+  const decodeFundList = (str: string | null): TFund[] => {
+    if (isNull(str)) return [];
+
+    return str.split(',').map(part => {
+      const [type, value, title] = part.split('::').map(decodeURIComponent) as [EFundType, string, string];
+
+      return {type, value, title};
+    });
+  };
+
   let query = $state('');
   const queryStore = toStore(() => query);
+
+  const queryParamsList = queryParam(
+    'list',
+    {
+      encode: encodeFundList,
+      decode: decodeFundList,
+      defaultValue: [],
+    },
+    {debounceHistory: 100, pushHistory: false},
+  );
 
   const fundListAPI = getIndexFundList();
   const mfAPI = queryMFApi(queryStore);
 
-  let selectedFundValues = $state<Set<string>>(new SvelteSet()); // managed by dropdown
-  let selectedFundValuesOrdered = $state<string[]>([]); // ordered list managed by draggable list
-  let selectedFundsMap = $state<Map<string, TFund>>(new SvelteMap());
+  const defaultFunds = get(queryParamsList);
+  const defaultValues = defaultFunds.map(f => f.value);
+
+  let selectedFundValues = $state<Set<string>>(new SvelteSet(defaultValues)); // managed by dropdown
+  let selectedFundValuesOrdered = $state<string[]>(defaultValues); // ordered list managed by draggable list
+  let selectedFundsMap = $state<Map<string, TFund>>(new SvelteMap(defaultFunds.map(f => [f.value, f])));
 
   const getSelectedFunds = (selectedFundValues: string[]) =>
     selectedFundValues.map(f => selectedFundsMap.get(f)).filter(isNotUndefined);
@@ -52,14 +87,26 @@
   });
 
   $effect(() => {
-    props.setOrderedFunds(getSelectedFunds(Array.from(selectedFundValuesOrdered)));
+    $queryParamsList = getSelectedFunds(selectedFundValuesOrdered);
+    props.setOrderedFunds(getSelectedFunds(selectedFundValuesOrdered));
   });
 </script>
 
+{#snippet Tag(fundType: EFundType)}
+  <span class="tag {fundType}">{fundTypeTitles[fundType].toUpperCase()}</span>
+{/snippet}
+
 {#snippet DropdownItem(fund: TFund)}
   <div class="dropdown-item">
-    <span class="tag {fund.type}">{fund.type.toUpperCase()}</span>
+    {@render Tag(fund.type)}
     <span class="dropdown-text">{fund.title}</span>
+  </div>
+{/snippet}
+
+{#snippet DraggableListContent(fund: TFund)}
+  <div class="draggable-list-content">
+    {@render Tag(fund.type)}
+    {fund.title}
   </div>
 {/snippet}
 
@@ -77,7 +124,8 @@
 />
 
 <DraggableList
-  list={getSelectedFunds(Array.from(selectedFundValues))}
+  content={DraggableListContent}
+  list={getSelectedFunds(Array.from(selectedFundValues)).map(f => ({data: f, value: f.value}))}
   setList={(list: string[]) => {
     if (list.length < selectedFundValues.size) {
       for (const item of selectedFundValues.values()) {
@@ -111,16 +159,23 @@
     font-size: 12px;
     font-weight: 700;
 
-    &.mf {
+    &.m {
       background-color: #f58231;
     }
 
-    &.index {
+    &.i {
       background-color: #4363d8;
     }
   }
 
   .dropdown-text {
     white-space: wrap;
+  }
+
+  .draggable-list-content {
+    width: 100%;
+    display: flex;
+    gap: 10px;
+    align-items: center;
   }
 </style>

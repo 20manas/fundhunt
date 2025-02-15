@@ -1,6 +1,6 @@
 export const enum EFundType {
-  MutualFund = 'mf',
-  Index = 'index',
+  MutualFund = 'm',
+  Index = 'i',
 }
 
 export interface TFund {

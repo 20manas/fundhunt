@@ -48,6 +48,7 @@
     "stylelint-config-standard-scss": "^14.0.0",
     "svelte": "5.13.0",
     "svelte-check": "^4.1.1",
+    "sveltekit-search-params": "^3.0.0",
     "typescript": "^5.7.2",
     "typescript-eslint": "^8.18.0",
     "vite": "6.0.3",
