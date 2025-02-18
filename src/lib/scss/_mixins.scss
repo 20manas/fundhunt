@@ -1,0 +1,13 @@
+$max-mobile-width: 480px;
+
+@mixin for-desktop {
+  @media (width > #{$max-mobile-width}) {
+    @content;
+  }
+}
+
+@mixin for-mobile {
+  @media (width <= #{$max-mobile-width}) {
+    @content;
+  }
+}

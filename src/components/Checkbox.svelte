@@ -39,7 +39,6 @@
     display: flex;
     align-items: center;
     gap: 20px;
-    font-size: 16px;
     cursor: pointer;
 
     &.__disabled {

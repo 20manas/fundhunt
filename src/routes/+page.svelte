@@ -48,7 +48,9 @@
 
 <section>
   <header>
-    <img src={logo} />
+    <a href="/">
+      <img src={logo} class="logo" />
+    </a>
     <p>Compare and analyze Mutual Funds and Indexes with useful metrics!</p>
   </header>
 
@@ -89,6 +91,11 @@
     align-items: center;
     gap: 30px;
     padding: 30px;
+
+    @include mixins.for-mobile {
+      gap: 20px;
+      padding: 20px;
+    }
   }
 
   header {
@@ -100,9 +107,22 @@
     gap: 10px;
 
     p {
-      font-size: 16px;
       font-style: italic;
       width: 250px;
+      color: lightgrey;
+
+      @include mixins.for-mobile {
+        width: 180px;
+        font-size: 12px;
+      }
+    }
+  }
+
+  .logo {
+    width: 200px;
+
+    @include mixins.for-mobile {
+      width: 150px;
     }
   }
 
@@ -116,7 +136,8 @@
     display: flex;
     flex-direction: column;
     gap: 30px;
-    min-width: 600px;
+    width: 600px;
+    max-width: 100%;
   }
 
   h2 {
@@ -131,5 +152,9 @@
     gap: 30px;
     padding: 30px;
     width: 100%;
+
+    @include mixins.for-mobile {
+      padding: 20px 0;
+    }
   }
 </style>

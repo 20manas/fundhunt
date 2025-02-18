@@ -194,6 +194,7 @@
     cursor: default;
     width: $width;
     margin: 0 auto;
+    max-width: 100%;
   }
 
   .box {
@@ -206,6 +207,10 @@
     height: 60px;
     width: 100%;
     font-size: 20px;
+
+    @include mixins.for-mobile {
+      font-size: 18px;
+    }
 
     &.__disabled {
       filter: saturate(75%) brightness(90%);

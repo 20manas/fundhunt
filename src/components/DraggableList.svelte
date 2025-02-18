@@ -73,12 +73,14 @@
   ul {
     margin-bottom: 30px;
     display: flex;
+    max-width: 100%;
     flex-direction: column;
     gap: 20px;
   }
 
   li {
     width: 600px;
+    max-width: 100%;
     background-color: rgb(20 20 20);
     border: 1px solid rgb(100 100 100);
     box-shadow: 0 0 10px rgb(100 100 100);
@@ -89,10 +91,6 @@
     gap: 30px;
     align-items: center;
     padding: 15px 20px;
-  }
-
-  .title {
-    width: 100%;
   }
 
   .drag {

@@ -155,9 +155,17 @@
     justify-content: center;
     align-items: center;
     color: white;
-    border-radius: 15px;
+    border-radius: 12.5px;
     font-size: 12px;
     font-weight: 700;
+    line-height: 1;
+
+    @include mixins.for-mobile {
+      width: 50px;
+      height: 20px;
+      border-radius: 10px;
+      font-size: 10px;
+    }
 
     &.m {
       background-color: #f58231;
