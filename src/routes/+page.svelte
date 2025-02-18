@@ -9,6 +9,7 @@
 
   import Chart from './Chart.svelte';
   import FundSelector from './FundSelector.svelte';
+  import logo from './logo.webp';
   import {getStats, type TStatsRequestData} from './stats.svelte';
 
   const PERIODS = [1, 3, 5, 7, 10] as const;
@@ -47,7 +48,7 @@
 
 <section>
   <header>
-    <h1><span>F</span>und<span>H</span>unt</h1>
+    <img src={logo} />
     <p>Compare and analyze Mutual Funds and Indexes with useful metrics!</p>
   </header>
 
@@ -97,18 +98,6 @@
     align-items: center;
     text-align: center;
     gap: 10px;
-
-    h1 {
-      font-size: 48px;
-      font-weight: 100;
-      text-transform: uppercase;
-
-      span {
-        color: #3cb49b;
-        font-weight: 600;
-        font-size: 72px;
-      }
-    }
 
     p {
       font-size: 16px;
