@@ -21,7 +21,7 @@
   const FUSE_OPTIONS: IFuseOptions<tListItem<unknown, unknown>> = {
     keys: ['search'],
     useExtendedSearch: true,
-    // threshold: 0.6,
+    ignoreLocation: true,
   };
 
   interface tDropdownProps<V, D> {
@@ -34,6 +34,7 @@
     isLoading?: boolean;
     isDisabled?: boolean;
     values: Set<V>;
+    query: string;
     setQuery: (query: string) => unknown;
   }
 
@@ -63,6 +64,14 @@
 
   const updateQueryDebounced = Ri.debounce({delay: 400}, (newQuery: string) => {
     queryDebounced = newQuery;
+  });
+
+  $effect(() => {
+    query = props.query;
+
+    runAfterPaint(() => {
+      show = true;
+    });
   });
 
   $effect(() => {

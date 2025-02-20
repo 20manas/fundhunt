@@ -22,11 +22,11 @@ export const getIndexFundList = () =>
 
 type tMFApiRaw = Array<{schemeCode: number; schemeName: string}>;
 
-export const queryMFApi = (query: Readable<string>) =>
+export const queryMFApi = (enabled: Readable<boolean>, query: Readable<string>) =>
   createQuery<tMFApiRaw, Error, TFund[], TQueryKey<{q: string}>>(
-    derived(query, $query => ({
+    derived([enabled, query], ([$enabled, $query]) => ({
       queryKey: ['https://api.mfapi.in/mf/search', {q: $query}, undefined] satisfies TQueryKey<{q: string}>,
-      enabled: $query.length > 0,
+      enabled: $enabled && $query.length > 0,
       queryFn: kyGetFetcher<tMFApiRaw, {q: string}>,
       select: (data: tMFApiRaw) =>
         data

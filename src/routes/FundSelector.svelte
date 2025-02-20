@@ -3,6 +3,7 @@
   import {get, toStore} from 'svelte/store';
   import {queryParam} from 'sveltekit-search-params';
 
+  import Checkbox from '$components/Checkbox.svelte';
   import DraggableList from '$components/DraggableList.svelte';
   import Dropdown from '$components/Dropdown.svelte';
   import {isNotUndefined, isNull, isNullish} from '$lib/type';
@@ -40,6 +41,8 @@
   let query = $state('');
   const queryStore = toStore(() => query);
 
+  const isDirectGrowthInQuery = $derived(query.includes('direct') && query.includes('growth'));
+
   const queryParamsList = queryParam(
     'list',
     {
@@ -50,8 +53,26 @@
     {debounceHistory: 100, pushHistory: false},
   );
 
+  let selectedFundTypes = $state<Set<EFundType>>(new SvelteSet([EFundType.Index, EFundType.MutualFund]));
+
+  const isMFSelected = toStore(() => selectedFundTypes.has(EFundType.MutualFund));
+
   const fundListAPI = getIndexFundList();
-  const mfAPI = queryMFApi(queryStore);
+  const mfAPI = queryMFApi(isMFSelected, queryStore);
+
+  const allFundsList = $derived.by(() => {
+    let list: TFund[] = [];
+
+    if (selectedFundTypes.has(EFundType.Index)) {
+      list = list.concat($fundListAPI.data ?? []);
+    }
+
+    if (selectedFundTypes.has(EFundType.MutualFund)) {
+      list = list.concat($mfAPI.data ?? []);
+    }
+
+    return list;
+  });
 
   const defaultFunds = get(queryParamsList);
   const defaultValues = defaultFunds.map(f => f.value);
@@ -110,18 +131,41 @@
   </div>
 {/snippet}
 
-<Dropdown
-  setQuery={(newQuery: string) => {
-    query = newQuery;
-  }}
-  placeholder="Search for Mutual Funds and Indexes"
-  bind:values={selectedFundValues}
-  isLoading={$mfAPI.isLoading || $fundListAPI.isLoading}
-  row={DropdownItem}
-  data={$fundListAPI.data
-    ?.concat($mfAPI.data ?? [])
-    .map(fund => ({value: fund.value, data: fund, search: fund.title})) ?? []}
-/>
+<div class="container">
+  <div class="action-bar">
+    <Checkbox
+      isChecked={selectedFundTypes.has(EFundType.Index)}
+      onChange={isChecked =>
+        isChecked ? selectedFundTypes.add(EFundType.Index) : selectedFundTypes.delete(EFundType.Index)}
+      >Index Funds</Checkbox
+    >
+    <Checkbox
+      isChecked={selectedFundTypes.has(EFundType.MutualFund)}
+      onChange={isChecked =>
+        isChecked ? selectedFundTypes.add(EFundType.MutualFund) : selectedFundTypes.delete(EFundType.MutualFund)}
+      >Mutual Funds</Checkbox
+    >
+
+    <button
+      disabled={isDirectGrowthInQuery}
+      class="btn"
+      onclick={() => {
+        query = query.replace('direct', '').replace('growth', '').replace(/\s+/, ' ').trim() + ' direct growth';
+      }}>Add "direct growth"</button
+    >
+  </div>
+  <Dropdown
+    {query}
+    setQuery={(newQuery: string) => {
+      query = newQuery;
+    }}
+    placeholder="Search for Mutual Funds and Indexes"
+    bind:values={selectedFundValues}
+    isLoading={$mfAPI.isLoading || $fundListAPI.isLoading}
+    row={DropdownItem}
+    data={allFundsList.map(fund => ({value: fund.value, data: fund, search: fund.title}))}
+  />
+</div>
 
 <DraggableList
   content={DraggableListContent}
@@ -142,14 +186,49 @@
 />
 
 <style lang="scss">
+  .container {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    max-width: 100%;
+  }
+
+  .action-bar {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+    width: 600px;
+    max-width: 100%;
+
+    @include mixins.for-mobile {
+      font-size: 12px;
+    }
+  }
+
+  .btn {
+    padding: 10px;
+    border: none;
+    background-color: #3cb49b;
+    border-radius: 5px;
+    font-weight: 500;
+    margin-left: auto;
+    cursor: pointer;
+
+    &:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+  }
+
   .dropdown-item {
     display: flex;
     gap: 10px;
     align-items: center;
+    margin-left: 10px;
   }
 
   .tag {
-    width: 60px;
+    min-width: 60px;
     height: 25px;
     display: flex;
     justify-content: center;
@@ -161,7 +240,7 @@
     line-height: 1;
 
     @include mixins.for-mobile {
-      width: 50px;
+      min-width: 50px;
       height: 20px;
       border-radius: 10px;
       font-size: 10px;

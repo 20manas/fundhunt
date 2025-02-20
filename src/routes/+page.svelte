@@ -62,23 +62,25 @@
 
   <div class="periods">
     <h2>Rolling Periods</h2>
-    {#each PERIODS as period}
-      <Checkbox
-        isChecked={selectedPeriods.has(period)}
-        onChange={(isChecked: boolean) => {
-          if (isChecked) {
-            selectedPeriods.add(period);
-          } else {
-            selectedPeriods.delete(period);
-          }
-        }}>{period} Year</Checkbox
-      >
-    {/each}
+    <div class="periods-list">
+      {#each PERIODS as period}
+        <Checkbox
+          isChecked={selectedPeriods.has(period)}
+          onChange={(isChecked: boolean) => {
+            if (isChecked) {
+              selectedPeriods.add(period);
+            } else {
+              selectedPeriods.delete(period);
+            }
+          }}>{period} Year</Checkbox
+        >
+      {/each}
+    </div>
   </div>
 
   {#each $statsAPI.data as stats}
     <article class="chart-container">
-      <h2>{stats.period}-Year Rolling XIRR for SIP</h2>
+      <h2>{stats.period}-Year Rolling XIRR of SIP</h2>
       <Chart data={stats.list} />
     </article>
   {/each}
@@ -130,6 +132,7 @@
     position: fixed;
     right: 30px;
     top: 20px;
+    z-index: 10;
   }
 
   .periods {
@@ -138,6 +141,12 @@
     gap: 30px;
     width: 600px;
     max-width: 100%;
+  }
+
+  .periods-list {
+    display: flex;
+    gap: 30px;
+    flex-wrap: wrap;
   }
 
   h2 {
