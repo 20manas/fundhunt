@@ -13,6 +13,7 @@ export default defineConfig({
         api: 'modern-compiler', // or 'modern'
         additionalData: `
           @use '$lib/scss/mixins';
+          @use '$lib/scss/common';
         `,
       },
     },

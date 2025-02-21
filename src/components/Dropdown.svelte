@@ -55,6 +55,8 @@
   let inputEl: HTMLInputElement;
 
   const onClick = (value: Value) => {
+    if (values.size >= 20) return;
+
     if (values.has(value)) {
       values.delete(value);
     } else {

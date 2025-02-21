@@ -148,7 +148,7 @@
 
     <button
       disabled={isDirectGrowthInQuery}
-      class="btn"
+      class="button"
       onclick={() => {
         query = query.replace('direct', '').replace('growth', '').replace(/\s+/, ' ').trim() + ' direct growth';
       }}>Add "direct growth"</button
@@ -202,21 +202,6 @@
 
     @include mixins.for-mobile {
       font-size: 12px;
-    }
-  }
-
-  .btn {
-    padding: 10px;
-    border: none;
-    background-color: #3cb49b;
-    border-radius: 5px;
-    font-weight: 500;
-    margin-left: auto;
-    cursor: pointer;
-
-    &:disabled {
-      opacity: 0.5;
-      cursor: not-allowed;
     }
   }
 

@@ -1,4 +1,5 @@
 <script lang="ts">
+  import dayjs from 'dayjs';
   import {
     createChart,
     ColorType,
@@ -6,10 +7,15 @@
     type Time,
     type MouseEventHandler,
     AreaSeries,
+    type IRange,
+    type IChartApi,
   } from 'lightweight-charts';
+  import * as Ri from 'radashi';
 
+  import {min, max, average, median} from '$lib/aggregates';
   import {waitForPaint} from '$lib/events';
   import {percentageFormatter} from '$lib/format';
+  import {isNotNull, isNull} from '$lib/type';
   import type {TFund} from '$types/funds';
   import type {TXirrEntry} from '$types/rolling';
 
@@ -39,12 +45,28 @@
   ];
 
   interface tProps {
+    showAggregates: boolean;
     data: Array<TFund & {data: TXirrEntry[]}>;
   }
 
   let props: tProps = $props();
   let legendData = $state<Array<{name: string; color: string; value: number | null}>>([]);
+  let chartObj: IChartApi | null = null;
   let seriesList: Array<ISeriesApi<'Area'>> = [];
+  let chartTimeRange = $state<{from: string; to: string} | null>(null);
+
+  const setChartTimeRange = Ri.debounce({delay: 200}, (range: IRange<Time> | null) => {
+    if (isNull(range)) {
+      chartTimeRange = null;
+
+      return;
+    }
+
+    chartTimeRange = {
+      from: range.from.toString(),
+      to: range.to.toString(),
+    };
+  });
 
   const addChart = (element: HTMLDivElement, data: tProps['data']) => {
     const chart = createChart(element, {
@@ -82,7 +104,14 @@
       },
     });
 
-    chart.timeScale().fitContent();
+    chartObj = chart;
+
+    const chartTimeScale = chart.timeScale();
+
+    chartTimeScale.fitContent();
+    setChartTimeRange(chartTimeScale.getVisibleRange());
+
+    chartTimeScale.subscribeVisibleTimeRangeChange(setChartTimeRange);
 
     const handleCrosshairMove: MouseEventHandler<Time> = param => {
       interface tSeriesItem {
@@ -160,7 +189,76 @@
       },
     };
   };
+
+  const getRawDataForStats = (data: TXirrEntry[], timeRange: {from: string; to: string}) =>
+    data
+      .filter(item => {
+        if (isNull(item.xirr)) return false;
+
+        const date = dayjs(item.date);
+
+        return !date.isBefore(dayjs(timeRange.from)) && !date.isAfter(dayjs(timeRange.to));
+      })
+      .map(item => item.xirr as number);
+
+  const formatAgg = (agg: number | null) => {
+    if (isNull(agg)) return 'N / A';
+
+    return percentageFormatter(agg);
+  };
 </script>
 
 <Legend data={legendData} />
 <div use:addChart={props.data}></div>
+<div>
+  <button
+    class="button"
+    onclick={() => {
+      chartObj?.timeScale().fitContent();
+    }}>Reset Time Scale</button
+  >
+</div>
+{#if props.showAggregates && isNotNull(chartTimeRange)}
+  <div class="container">
+    <h3>{chartTimeRange.from} to {chartTimeRange.to}</h3>
+    <table>
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Min</th>
+          <th>Average</th>
+          <th>Median</th>
+          <th>Max</th>
+        </tr>
+      </thead>
+      <tbody>
+        {#each props.data as row}
+          {@const rawData = getRawDataForStats(row.data, chartTimeRange)}
+          <tr>
+            <td>{row.title}</td>
+            <td>{formatAgg(min(rawData))} </td>
+            <td>{formatAgg(average(rawData))} </td>
+            <td>{formatAgg(median(rawData))} </td>
+            <td>{formatAgg(max(rawData))} </td>
+          </tr>
+        {/each}
+      </tbody>
+    </table>
+  </div>
+{/if}
+
+<style lang="scss">
+  .container {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+  th {
+    text-align: left;
+    padding: 10px 0;
+  }
+
+  td {
+    padding: 10px 0;
+  }
+</style>

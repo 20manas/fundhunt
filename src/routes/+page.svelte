@@ -15,6 +15,7 @@
   const PERIODS = [1, 3, 5, 7, 10] as const;
   let selectedPeriods = $state<Set<number>>(new SvelteSet([3, 5]));
   let orderedFunds = $state<TFund[]>([]);
+  let showAggregates = $state(false);
 
   let statsRequestData: TStatsRequestData = $derived.by(() =>
     PERIODS.filter(per => selectedPeriods.has(per)).map(period => ({
@@ -36,8 +37,8 @@
     fn(statsRequestData);
   });
 
-  const stsatsRequestDataStore = toStore(() => statsRequestDataDeferred);
-  const statsAPI = getStats(stsatsRequestDataStore);
+  const statsRequestDataStore = toStore(() => statsRequestDataDeferred);
+  const statsAPI = getStats(statsRequestDataStore);
 </script>
 
 {#if $statsAPI.isLoading}
@@ -78,10 +79,33 @@
     </div>
   </div>
 
+  <div class="options">
+    <h2>Options</h2>
+    <Checkbox
+      isChecked={showAggregates}
+      onChange={isChecked => {
+        showAggregates = isChecked;
+      }}>Show Aggregate Stats: Min, Average, Median and Max</Checkbox
+    >
+    <!-- <Checkbox
+      isChecked={isNotNull(timeRange)}
+      onChange={isChecked => {
+        if (isChecked) {
+          timeRange = {
+            from: dayjs().subtract(1, 'year').format('YYYY-MM-DD'),
+            to: dayjs().format('YYYY-MM-DD'),
+          };
+        } else {
+          timeRange = null;
+        }
+      }}>Sync Time Range in Charts</Checkbox
+    > -->
+  </div>
+
   {#each $statsAPI.data as stats}
     <article class="chart-container">
       <h2>{stats.period}-Year Rolling XIRR of SIP</h2>
-      <Chart data={stats.list} />
+      <Chart {showAggregates} data={stats.list} />
     </article>
   {/each}
 </section>
@@ -138,7 +162,7 @@
   .periods {
     display: flex;
     flex-direction: column;
-    gap: 30px;
+    gap: 20px;
     width: 600px;
     max-width: 100%;
   }
@@ -147,6 +171,14 @@
     display: flex;
     gap: 30px;
     flex-wrap: wrap;
+  }
+
+  .options {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+    width: 600px;
+    max-width: 100%;
   }
 
   h2 {
