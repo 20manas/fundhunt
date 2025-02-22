@@ -1,3 +1,5 @@
+import {isNull} from './type';
+
 export const min = (data: number[]) => {
   if (data.length === 0) return null;
 
@@ -53,4 +55,22 @@ export const median = (data: number[]) => {
   const num2 = sortedData[sortedData.length / 2];
 
   return (num1 + num2) / 2;
+};
+
+export const stdDev = (data: number[]) => {
+  if (data.length === 0) return null;
+
+  const avg = average(data);
+
+  if (isNull(avg)) return null;
+
+  let sum = 0;
+  let count = 0;
+
+  for (const num of data) {
+    sum += Math.pow(num - avg, 2);
+    count++;
+  }
+
+  return Math.sqrt(sum / count);
 };

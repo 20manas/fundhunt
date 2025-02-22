@@ -54,7 +54,15 @@ const fetchIndexPriceHistory = (fund: TFund, signal: AbortSignal) =>
   });
 
 interface tMfNavData {
-  meta: unknown;
+  meta: {
+    fund_house: string;
+    scheme_type: string;
+    scheme_category: string;
+    scheme_code: number;
+    scheme_name: string;
+    isin_growth: string;
+    isin_div_reinvestment: unknown;
+  };
   data: Array<{
     status: string;
     date: string;
@@ -63,12 +71,14 @@ interface tMfNavData {
 }
 
 const fetchMfPriceHistory = (fund: TFund, signal: AbortSignal) =>
-  kyGet<tMfNavData>(`https://api.mfapi.in/mf/${fund.value}`, undefined, {signal}).then(data =>
-    data.data.map<TPriceHistoryItem>(entry => ({
+  kyGet<tMfNavData>(`https://api.mfapi.in/mf/${fund.value}`, undefined, {signal}).then(data => {
+    fund.title = data.meta.scheme_name;
+
+    return data.data.map<TPriceHistoryItem>(entry => ({
       price: parseFloat(entry.nav),
       date: getDateStr(dayjs(entry.date, 'DD-MM-YYYY')),
-    })),
-  );
+    }));
+  });
 
 export const fetchPriceHistory = Ri.memo(
   async (fund: TFund, signal: AbortSignal) => {

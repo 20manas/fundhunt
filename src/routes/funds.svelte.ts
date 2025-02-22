@@ -8,7 +8,7 @@ import {EFundType, type TFund} from '$types/funds';
 
 type tListRaw = string[];
 
-const getTitle = (value: string) => Ri.title(value.replaceAll(/([-A-Za-z]+)(\d+)/g, '$1 $2').toLowerCase());
+export const getIndexTitle = (value: string) => Ri.title(value.replaceAll(/([-A-Za-z]+)(\d+)/g, '$1 $2').toLowerCase());
 
 export const getIndexFundList = () =>
   createQuery<tListRaw, Error, TFund[], TQueryKey<undefined>>({
@@ -16,7 +16,7 @@ export const getIndexFundList = () =>
     queryFn: kyGetFetcher<tListRaw>,
     select: data =>
       Array.from(new Set(data))
-        .map<TFund>(f => ({type: EFundType.Index, value: f, title: getTitle(f)}))
+        .map<TFund>(f => ({type: EFundType.Index, value: f, title: getIndexTitle(f)}))
         .toSorted((f1, f2) => f1.title.localeCompare(f2.title)),
   });
 

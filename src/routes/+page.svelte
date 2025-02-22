@@ -5,7 +5,7 @@
   import Checkbox from '$components/Checkbox.svelte';
   import Loader from '$components/Loader.svelte';
   import {runAfterPaint} from '$lib/events';
-  import {type TFund} from '$types/funds';
+  import {EFundType, type TFund} from '$types/funds';
 
   import Chart from './Chart.svelte';
   import FundSelector from './FundSelector.svelte';
@@ -39,6 +39,14 @@
 
   const statsRequestDataStore = toStore(() => statsRequestDataDeferred);
   const statsAPI = getStats(statsRequestDataStore);
+
+  let mfTitles = $state<Array<{value: string; title: string}>>([]);
+
+  $effect(() => {
+    mfTitles = orderedFunds.filter(fund => fund.type === EFundType.MutualFund);
+
+    $statsAPI.data;
+  });
 </script>
 
 {#if $statsAPI.isLoading}
@@ -56,6 +64,7 @@
   </header>
 
   <FundSelector
+    {mfTitles}
     setOrderedFunds={(funds: TFund[]) => {
       orderedFunds = funds;
     }}
@@ -85,27 +94,13 @@
       isChecked={showAggregates}
       onChange={isChecked => {
         showAggregates = isChecked;
-      }}>Show Aggregate Stats: Min, Average, Median and Max</Checkbox
+      }}>Show Aggregate Stats: Min, Average, Median, Max and Standard Deviation</Checkbox
     >
-    <!-- <Checkbox
-      isChecked={isNotNull(timeRange)}
-      onChange={isChecked => {
-        if (isChecked) {
-          timeRange = {
-            from: dayjs().subtract(1, 'year').format('YYYY-MM-DD'),
-            to: dayjs().format('YYYY-MM-DD'),
-          };
-        } else {
-          timeRange = null;
-        }
-      }}>Sync Time Range in Charts</Checkbox
-    > -->
   </div>
 
   {#each $statsAPI.data as stats}
     <article class="chart-container">
-      <h2>{stats.period}-Year Rolling XIRR of SIP</h2>
-      <Chart {showAggregates} data={stats.list} />
+      <Chart title={`${stats.period}-Year Rolling XIRR of SIP`} {showAggregates} data={stats.list} />
     </article>
   {/each}
 </section>
@@ -179,12 +174,6 @@
     gap: 20px;
     width: 600px;
     max-width: 100%;
-  }
-
-  h2 {
-    display: flex;
-    gap: 20px;
-    height: 30px;
   }
 
   .chart-container {

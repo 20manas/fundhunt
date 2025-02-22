@@ -12,7 +12,7 @@
   } from 'lightweight-charts';
   import * as Ri from 'radashi';
 
-  import {min, max, average, median} from '$lib/aggregates';
+  import {min, max, average, median, stdDev} from '$lib/aggregates';
   import {waitForPaint} from '$lib/events';
   import {percentageFormatter} from '$lib/format';
   import {isNotNull, isNull} from '$lib/type';
@@ -45,6 +45,7 @@
   ];
 
   interface tProps {
+    title: string;
     showAggregates: boolean;
     data: Array<TFund & {data: TXirrEntry[]}>;
   }
@@ -53,16 +54,16 @@
   let legendData = $state<Array<{name: string; color: string; value: number | null}>>([]);
   let chartObj: IChartApi | null = null;
   let seriesList: Array<ISeriesApi<'Area'>> = [];
-  let chartTimeRange = $state<{from: string; to: string} | null>(null);
+  let timeRange = $state<{from: string; to: string} | null>(null);
 
   const setChartTimeRange = Ri.debounce({delay: 200}, (range: IRange<Time> | null) => {
     if (isNull(range)) {
-      chartTimeRange = null;
+      timeRange = null;
 
       return;
     }
 
-    chartTimeRange = {
+    timeRange = {
       from: range.from.toString(),
       to: range.to.toString(),
     };
@@ -190,6 +191,17 @@
     };
   };
 
+  $effect(() => {
+    if (isNull(chartObj) || isNull(timeRange)) return;
+
+    const timeScale = chartObj.timeScale();
+    const chartRange = timeScale.getVisibleRange();
+
+    if (timeRange.from === chartRange?.from && timeRange.to === chartRange.to) return;
+
+    timeScale.setVisibleRange(timeRange);
+  });
+
   const getRawDataForStats = (data: TXirrEntry[], timeRange: {from: string; to: string}) =>
     data
       .filter(item => {
@@ -208,19 +220,24 @@
   };
 </script>
 
+<h2>{props.title}</h2>
 <Legend data={legendData} />
 <div use:addChart={props.data}></div>
-<div>
-  <button
-    class="button"
-    onclick={() => {
-      chartObj?.timeScale().fitContent();
-    }}>Reset Time Scale</button
-  >
-</div>
-{#if props.showAggregates && isNotNull(chartTimeRange)}
+{#if isNotNull(timeRange)}
+  <div class="time-range">
+    <input type="date" bind:value={timeRange.from} />
+    <input type="date" class="end-date" bind:value={timeRange.to} />
+    <button
+      class="button"
+      onclick={() => {
+        chartObj?.timeScale().fitContent();
+      }}>Reset</button
+    >
+  </div>
+{/if}
+{#if props.showAggregates && isNotNull(timeRange)}
   <div class="container">
-    <h3>{chartTimeRange.from} to {chartTimeRange.to}</h3>
+    <h3>Aggregate Stats for {props.title} from {timeRange.from} to {timeRange.to}</h3>
     <table>
       <thead>
         <tr>
@@ -229,17 +246,19 @@
           <th>Average</th>
           <th>Median</th>
           <th>Max</th>
+          <th>Std Dev</th>
         </tr>
       </thead>
       <tbody>
         {#each props.data as row}
-          {@const rawData = getRawDataForStats(row.data, chartTimeRange)}
+          {@const rawData = getRawDataForStats(row.data, timeRange)}
           <tr>
             <td>{row.title}</td>
             <td>{formatAgg(min(rawData))} </td>
             <td>{formatAgg(average(rawData))} </td>
             <td>{formatAgg(median(rawData))} </td>
             <td>{formatAgg(max(rawData))} </td>
+            <td>{formatAgg(stdDev(rawData))} </td>
           </tr>
         {/each}
       </tbody>
@@ -253,6 +272,31 @@
     flex-direction: column;
     gap: 10px;
   }
+
+  .time-range {
+    display: flex;
+    gap: 10px;
+  }
+
+  input[type='date'] {
+    border: none;
+    padding: 10px;
+    background-color: #3cb49baa;
+    border-radius: 20px;
+
+    @include mixins.for-mobile {
+      padding: 5px;
+    }
+
+    &.end-date {
+      margin-left: auto;
+    }
+  }
+
+  h3 {
+    text-align: center;
+  }
+
   th {
     text-align: left;
     padding: 10px 0;

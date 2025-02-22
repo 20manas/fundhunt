@@ -43,21 +43,16 @@ export const getStats = (requestData: Readable<TStatsRequestData>) =>
   createQueries({
     queries: derived(requestData, $requestData =>
       $requestData
-        .flatMap(item => item.list.map(fund => ({...fund, period: item.period})))
+        .flatMap(item => item.list.map(fund => ({fund, period: item.period})))
         .map(item => ({
           queryKey: [item] as const,
-          queryFn: async ({
-            queryKey,
-            signal,
-          }: {
-            queryKey: Readonly<[TFund & {period: number}]>;
-            signal: AbortSignal;
-          }) => {
-            const data = await fetchPriceHistory(queryKey[0], signal);
+          queryFn: async ({signal}: {queryKey: Readonly<[{fund: TFund; period: number}]>; signal: AbortSignal}) => {
+            const data = await fetchPriceHistory(item.fund, signal);
 
             return {
-              ...item,
-              data: await rollingWorker.rollingReturns(queryKey[0].period, data),
+              ...item.fund,
+              period: item.period,
+              data: await rollingWorker.rollingReturns(item.period, data),
             };
           },
           staleTime: Infinity,

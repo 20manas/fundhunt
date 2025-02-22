@@ -6,12 +6,13 @@
   import Checkbox from '$components/Checkbox.svelte';
   import DraggableList from '$components/DraggableList.svelte';
   import Dropdown from '$components/Dropdown.svelte';
-  import {isNotUndefined, isNull, isNullish} from '$lib/type';
+  import {isNotNullish, isNotUndefined, isNull, isNullish} from '$lib/type';
   import {EFundType, type TFund} from '$types/funds';
 
-  import {getIndexFundList, queryMFApi} from './funds.svelte';
+  import {getIndexFundList, getIndexTitle, queryMFApi} from './funds.svelte';
 
   interface tProps {
+    mfTitles: Array<{value: string; title: string}>;
     setOrderedFunds: (funds: TFund[]) => unknown;
   }
 
@@ -25,14 +26,16 @@
   const encodeFundList = (fundList: TFund[]) => {
     if (fundList.length === 0) return;
 
-    return fundList.map(fund => [fund.type, fund.value, fund.title].map(encodeURIComponent).join('::')).join(',');
+    return fundList.map(fund => `${fund.type}${encodeURIComponent(fund.value)}`).join(',');
   };
 
   const decodeFundList = (str: string | null): TFund[] => {
     if (isNull(str)) return [];
 
     return str.split(',').map(part => {
-      const [type, value, title] = part.split('::').map(decodeURIComponent) as [EFundType, string, string];
+      const type = part[0] as EFundType;
+      const value = decodeURIComponent(part.slice(1));
+      const title = type === EFundType.Index ? getIndexTitle(value) : 'Loading...';
 
       return {type, value, title};
     });
@@ -110,6 +113,21 @@
   $effect(() => {
     $queryParamsList = getSelectedFunds(selectedFundValuesOrdered);
     props.setOrderedFunds(getSelectedFunds(selectedFundValuesOrdered));
+  });
+
+  $effect(() => {
+    for (const mf of props.mfTitles) {
+      const fund = selectedFundsMap.get(mf.value);
+
+      if (isNotNullish(fund)) {
+        fund.title = mf.title;
+        selectedFundsMap.set(mf.value, fund);
+      }
+    }
+
+    // no-op to cause selectedFundValues dependents to re-render
+    selectedFundValues.add('random-string-ji3jfd');
+    selectedFundValues.delete('random-string-ji3jfd');
   });
 </script>
 
@@ -191,6 +209,10 @@
     flex-direction: column;
     gap: 10px;
     max-width: 100%;
+  }
+
+  .button {
+    margin-left: auto;
   }
 
   .action-bar {
