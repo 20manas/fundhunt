@@ -1,6 +1,7 @@
 <script lang="ts">
   import {SvelteSet} from 'svelte/reactivity';
-  import {toStore} from 'svelte/store';
+  import {get, toStore} from 'svelte/store';
+  import {queryParam} from 'sveltekit-search-params';
 
   import Checkbox from '$components/Checkbox.svelte';
   import Loader from '$components/Loader.svelte';
@@ -13,9 +14,39 @@
   import {getStats, type TStatsRequestData} from './stats.svelte';
 
   const PERIODS = [1, 3, 5, 7, 10] as const;
-  let selectedPeriods = $state<Set<number>>(new SvelteSet([3, 5]));
+
+  const encodePeriod = (periods: number[]) => {
+    const str = encodeURIComponent(periods.join(','));
+
+    if (str.length === 0) return;
+
+    return str;
+  };
+
+  const decodePeriod = (str: string | null) =>
+    decodeURIComponent(str ?? '')
+      .split(',')
+      .map(num => parseInt(num));
+
+  const selectedPeriodsQuery = queryParam(
+    'periods',
+    {
+      encode: encodePeriod,
+      decode: decodePeriod,
+      defaultValue: [3, 5],
+    },
+    {pushHistory: false},
+  );
+
+  let selectedPeriods = $state<Set<number>>(new SvelteSet(get(selectedPeriodsQuery)));
+
+  const showAggregatesQuery = queryParam('agg', {
+    encode: (show: boolean) => (show ? 'true' : undefined),
+    decode: (str: string | null) => str === 'true',
+  });
+  let showAggregates = $state(get(showAggregatesQuery));
+
   let orderedFunds = $state<TFund[]>([]);
-  let showAggregates = $state(false);
 
   let statsRequestData: TStatsRequestData = $derived.by(() =>
     PERIODS.filter(per => selectedPeriods.has(per)).map(period => ({
@@ -46,6 +77,14 @@
     mfTitles = orderedFunds.filter(fund => fund.type === EFundType.MutualFund);
 
     $statsAPI.data;
+  });
+
+  $effect(() => {
+    $selectedPeriodsQuery = Array.from(selectedPeriods);
+  });
+
+  $effect(() => {
+    $showAggregatesQuery = showAggregates;
   });
 </script>
 

@@ -59,6 +59,21 @@
   let selectedFundTypes = $state<Set<EFundType>>(new SvelteSet([EFundType.Index, EFundType.MutualFund]));
 
   const isMFSelected = toStore(() => selectedFundTypes.has(EFundType.MutualFund));
+  let searchPlaceholder = $derived.by(() => {
+    const names: Record<EFundType, string> = {
+      [EFundType.Index]: 'Indexes',
+      [EFundType.MutualFund]: 'Mutual Funds',
+    };
+
+    const fundNamesStr = Array.from(selectedFundTypes)
+      .sort()
+      .map(type => names[type])
+      .join(' and ');
+
+    if (fundNamesStr.length === 0) return '';
+
+    return `Search for ${fundNamesStr}`;
+  });
 
   const fundListAPI = getIndexFundList();
   const mfAPI = queryMFApi(isMFSelected, queryStore);
@@ -169,7 +184,7 @@
       class="button"
       onclick={() => {
         query = query.replace('direct', '').replace('growth', '').replace(/\s+/, ' ').trim() + ' direct growth';
-      }}>Add "direct growth"</button
+      }}>Add "direct growth" to search</button
     >
   </div>
   <Dropdown
@@ -177,7 +192,7 @@
     setQuery={(newQuery: string) => {
       query = newQuery;
     }}
-    placeholder="Search for Mutual Funds and Indexes"
+    placeholder={searchPlaceholder}
     bind:values={selectedFundValues}
     isLoading={$mfAPI.isLoading || $fundListAPI.isLoading}
     row={DropdownItem}

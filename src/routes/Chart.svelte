@@ -237,7 +237,7 @@
 {/if}
 {#if props.showAggregates && isNotNull(timeRange)}
   <div class="container">
-    <h3>Aggregate Stats for {props.title} from {timeRange.from} to {timeRange.to}</h3>
+    <h3>Aggregate Stats of {props.title} ({timeRange.from} to {timeRange.to})</h3>
     <table>
       <thead>
         <tr>
