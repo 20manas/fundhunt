@@ -1,4 +1,4 @@
-import {isNull} from './type';
+import {isNull, isUndefined} from './type';
 
 export const min = (data: number[]) => {
   if (data.length === 0) return null;
@@ -32,14 +32,12 @@ export const average = (data: number[]) => {
   if (data.length === 0) return null;
 
   let sum = 0;
-  let count = 0;
 
   for (const num of data) {
     sum += num;
-    count++;
   }
 
-  return sum / count;
+  return sum / data.length;
 };
 
 export const median = (data: number[]) => {
@@ -65,12 +63,22 @@ export const stdDev = (data: number[]) => {
   if (isNull(avg)) return null;
 
   let sum = 0;
-  let count = 0;
 
   for (const num of data) {
     sum += Math.pow(num - avg, 2);
-    count++;
   }
 
-  return Math.sqrt(sum / count);
+  return Math.sqrt(sum / (data.length - 1));
+};
+
+export const downsideDev = (data: number[], mar?: number) => {
+  mar = mar ?? average(data) ?? 0;
+
+  let sum = 0;
+
+  for (const num of data) {
+    if (num < mar) sum += Math.pow(num - mar, 2);
+  }
+
+  return Math.sqrt(sum / (data.length - 1));
 };

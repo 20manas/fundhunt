@@ -23,10 +23,17 @@ export const fillMissingData = (data: TPriceHistoryItem[]) => {
   for (let index = startIndex, phIndex = 0; index <= endIndex; index++) {
     const date = dates.dayWise[index];
 
-    newData.push({
-      date: date,
-      price: data[phIndex].price,
-    });
+    if (date !== data[phIndex].date && data.length > phIndex + 1) {
+      newData.push({
+        date: date,
+        price: (data[phIndex].price + data[phIndex + 1].price) / 2,
+      });
+    } else {
+      newData.push({
+        date: date,
+        price: data[phIndex].price,
+      });
+    }
 
     if (date === data[phIndex].date) {
       phIndex++;
@@ -46,6 +53,28 @@ export const getDatePriceMap = (data: TPriceHistoryItem[]): TDatePriceMap => {
   }
 
   return map;
+};
+
+export const getPriceHistoryDateRange = (phData: TPriceHistoryItem[]) => {
+  if (phData.length === 0) {
+    console.error('no price history data in getPriceHistoryDateRange');
+    throw new Error('no price history data in getPriceHistoryDateRange');
+  }
+
+  let minDate = phData[0].date;
+  let maxDate = phData[0].date;
+
+  for (const item of phData) {
+    if (minDate.localeCompare(item.date) > 0) {
+      minDate = item.date;
+    }
+
+    if (maxDate.localeCompare(item.date) < 0) {
+      maxDate = item.date;
+    }
+  }
+
+  return {min: minDate, max: maxDate};
 };
 
 const fetchIndexPriceHistory = (fund: TFund, signal: AbortSignal) =>

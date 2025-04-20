@@ -56,7 +56,7 @@
     {debounceHistory: 100, pushHistory: false},
   );
 
-  let selectedFundTypes = $state<Set<EFundType>>(new SvelteSet([EFundType.Index, EFundType.MutualFund]));
+  let selectedFundTypes = $state<Set<EFundType>>(new SvelteSet([EFundType.Index]));
 
   const isMFSelected = toStore(() => selectedFundTypes.has(EFundType.MutualFund));
   let searchPlaceholder = $derived.by(() => {

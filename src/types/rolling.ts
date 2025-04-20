@@ -1,10 +1,15 @@
+import type {EMetric} from '$types/metrics';
 import type {TPriceHistoryItem} from '$types/price-history';
 
-export interface TXirrEntry {
+export interface TDerivedValue {
   date: string;
-  xirr: number | null;
+  value: number | null;
 }
 
 type tMaybePromise<T> = T | Promise<T>;
 
-export type TRollingReturns = (period: number, priceHistory: TPriceHistoryItem[]) => tMaybePromise<TXirrEntry[]>;
+export type TRollingReturns = (
+  metric: EMetric,
+  period: number,
+  priceHistory: TPriceHistoryItem[],
+) => tMaybePromise<TDerivedValue[]>;

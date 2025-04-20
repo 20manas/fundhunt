@@ -1,6 +1,7 @@
 <script lang="ts">
-  import {percentageFormatter} from '$lib/format';
+  import {formatNumber, formatPercentage} from '$lib/format';
   import {isNotNull} from '$lib/type';
+  import {EMetric} from '$types/metrics';
 
   interface tItem {
     name: string;
@@ -9,10 +10,15 @@
   }
 
   interface tProps {
+    metric: EMetric;
     data: tItem[];
   }
 
   let props: tProps = $props();
+
+  let formatValue = $derived(
+    [EMetric.Sharpe, EMetric.Sortino].includes(props.metric) ? formatNumber : formatPercentage,
+  );
 </script>
 
 {#snippet Item(item: tItem)}
@@ -23,7 +29,7 @@
     </div>
     <span class="value">
       {#if isNotNull(item.value)}
-        {percentageFormatter(item.value)}
+        {formatValue(item.value)}
       {/if}
     </span>
   </li>

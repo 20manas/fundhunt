@@ -14,10 +14,11 @@
 
   import {min, max, average, median, stdDev} from '$lib/aggregates';
   import {waitForPaint} from '$lib/events';
-  import {percentageFormatter} from '$lib/format';
+  import {formatNumber, formatPercentage} from '$lib/format';
   import {isNotNull, isNull} from '$lib/type';
   import type {TFund} from '$types/funds';
-  import type {TXirrEntry} from '$types/rolling';
+  import {EMetric} from '$types/metrics';
+  import type {TDerivedValue} from '$types/rolling';
 
   import Legend from './Legend.svelte';
 
@@ -46,8 +47,9 @@
 
   interface tProps {
     title: string;
+    metric: EMetric;
     showAggregates: boolean;
-    data: Array<TFund & {data: TXirrEntry[]}>;
+    data: Array<TFund & {data: TDerivedValue[]}>;
   }
 
   let props: tProps = $props();
@@ -68,6 +70,10 @@
       to: range.to.toString(),
     };
   });
+
+  let formatValue = $derived(
+    [EMetric.Sharpe, EMetric.Sortino].includes(props.metric) ? formatNumber : formatPercentage,
+  );
 
   const addChart = (element: HTMLDivElement, data: tProps['data']) => {
     const chart = createChart(element, {
@@ -101,7 +107,7 @@
         barSpacing: 0.4,
       },
       localization: {
-        priceFormatter: percentageFormatter,
+        priceFormatter: formatValue,
       },
     });
 
@@ -159,7 +165,7 @@
           // bottomColor: color + '00',
         });
 
-        newSeries.setData(fund.data.map(item => ({time: item.date, value: item.xirr ?? 0, customValues: {color}})));
+        newSeries.setData(fund.data.map(item => ({time: item.date, value: item.value ?? 0, customValues: {color}})));
 
         seriesList.push(newSeries);
       });
@@ -202,26 +208,26 @@
     timeScale.setVisibleRange(timeRange);
   });
 
-  const getRawDataForStats = (data: TXirrEntry[], timeRange: {from: string; to: string}) =>
+  const getRawDataForStats = (data: TDerivedValue[], timeRange: {from: string; to: string}) =>
     data
       .filter(item => {
-        if (isNull(item.xirr)) return false;
+        if (isNull(item.value)) return false;
 
         const date = dayjs(item.date);
 
         return !date.isBefore(dayjs(timeRange.from)) && !date.isAfter(dayjs(timeRange.to));
       })
-      .map(item => item.xirr as number);
+      .map(item => item.value as number);
 
   const formatAgg = (agg: number | null) => {
     if (isNull(agg)) return 'N / A';
 
-    return percentageFormatter(agg);
+    return formatValue(agg);
   };
 </script>
 
 <h2>{props.title}</h2>
-<Legend data={legendData} />
+<Legend metric={props.metric} data={legendData} />
 <div use:addChart={props.data}></div>
 {#if isNotNull(timeRange)}
   <div class="time-range">

@@ -5,6 +5,9 @@ XIRR Calculation Logic: https://github.com/apache/openoffice/blob/62728d68bb0c5a
 /* eslint-disable max-depth */
 
 import {dates} from '$lib/dates';
+import type {TDatePriceMap} from '$lib/price-history';
+
+import {generateXirrData, getSellingPrice} from './sip';
 
 const MAX_EPSILON = 1e-10;
 const MAX_ITERATIONS = 50;
@@ -60,7 +63,7 @@ const getIRRResultDerivative = (data: XIRREntry[], rate: number): number => {
 /**
  * Use Newton's method to find a solution for rate
  */
-export const calcXIRR = (data: XIRREntry[], guess = 0.1) => {
+const calcXIRR = (data: XIRREntry[], guess = 0.1) => {
   let hasPositive = false;
   let hasNegative = false;
 
@@ -94,6 +97,23 @@ export const calcXIRR = (data: XIRREntry[], guess = 0.1) => {
   }
 
   return null;
+};
+
+const INVESTMENT = 10000;
+
+export const xirr = (phMap: TDatePriceMap, periodStart: string, periodEnd: string) => {
+  const sellingPrice = getSellingPrice(phMap, periodStart, periodEnd, INVESTMENT);
+
+  if (sellingPrice === null) {
+    return null;
+  }
+
+  const xirrData = generateXirrData(periodStart, periodEnd, INVESTMENT, sellingPrice);
+  const xirr = calcXIRR(xirrData);
+
+  if (xirr === null) return null;
+
+  return xirr * 100;
 };
 
 /* eslint-enable */

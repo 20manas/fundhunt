@@ -1,50 +1,21 @@
 import dayjs from 'dayjs';
 
 import {dates, getDateStr} from '$lib/dates';
-import {getDatePriceMap} from '$lib/price-history';
-import type {TPriceHistoryItem} from '$types/price-history';
+import {getDatePriceMap, getPriceHistoryDateRange, type TDatePriceMap} from '$lib/price-history';
+import {EMetric} from '$types/metrics';
 import type {TRollingReturns} from '$types/rolling';
 
-import {generateXirrData, getSellingPrice} from './sip';
-import {calcXIRR} from './xirr';
+import {downside} from './downside';
+import {sd} from './sd';
+import {sharpeRatio} from './sharpe';
+import {sortinoRatio} from './sortino';
+import {xirr} from './xirr';
 
-const INVESTMENT = 10000;
-
-const getPriceHistoryDateRange = (phData: TPriceHistoryItem[]) => {
-  if (phData.length === 0) {
-    console.error('no price history data in getPriceHistoryDateRange');
-    throw new Error('no price history data in getPriceHistoryDateRange');
-  }
-
-  let minDate = phData[0].date;
-  let maxDate = phData[0].date;
-
-  for (const item of phData) {
-    if (minDate.localeCompare(item.date) > 0) {
-      minDate = item.date;
-    }
-
-    if (maxDate.localeCompare(item.date) < 0) {
-      maxDate = item.date;
-    }
-  }
-
-  return {min: minDate, max: maxDate};
-};
-
-export const rollingReturns: TRollingReturns = (period, phData) => {
-  if (phData.length === 0) return [];
-
+const rollingXirr = (phMap: TDatePriceMap, startDate: string, endDate: string, period: number) => {
   const data: ReturnType<TRollingReturns> = [];
-
-  const dateRange = getPriceHistoryDateRange(phData);
-  const startDate = getDateStr(dayjs(dateRange.min).add(period, 'years'));
-  const endDate = dateRange.max;
 
   const startIndex = dates.dayWiseIndex(startDate);
   const endIndex = dates.dayWiseIndex(endDate);
-
-  const phMap = getDatePriceMap(phData);
 
   for (let index = startIndex; index <= endIndex; index++) {
     const date = dates.dayWise[index];
@@ -52,23 +23,141 @@ export const rollingReturns: TRollingReturns = (period, phData) => {
     const periodEnd = date;
     const periodStart = getDateStr(dayjs(date).subtract(period, 'years'));
 
-    const sellingPrice = getSellingPrice(phMap, periodStart, periodEnd, INVESTMENT);
-
-    if (sellingPrice === null) {
-      console.log('no selling price', date);
-      continue;
-    }
-
-    const xirrData = generateXirrData(periodStart, periodEnd, INVESTMENT, sellingPrice);
-    const xirr = calcXIRR(xirrData);
-
     data.push({
       date,
-      xirr: xirr !== null ? xirr * 100 : null,
+      value: xirr(phMap, periodStart, periodEnd),
     });
   }
 
   return data;
+};
+
+const rollingSd = (
+  metric: EMetric.SdDaily | EMetric.SdMonthly,
+  phMap: TDatePriceMap,
+  startDate: string,
+  endDate: string,
+  period: number,
+) => {
+  const data: ReturnType<TRollingReturns> = [];
+
+  const startIndex = dates.dayWiseIndex(
+    dayjs(startDate)
+      .add(1, metric === EMetric.SdDaily ? 'day' : 'month')
+      .format('YYYY-MM-DD'),
+  );
+
+  const endIndex = dates.dayWiseIndex(endDate);
+
+  for (let index = startIndex; index <= endIndex; index++) {
+    const date = dates.dayWise[index];
+
+    const periodEnd = date;
+    const periodStart = getDateStr(dayjs(date).subtract(period, 'years'));
+
+    data.push({
+      date,
+      value: sd(metric === EMetric.SdDaily ? 'daily' : 'monthly', phMap, periodStart, periodEnd),
+    });
+  }
+
+  return data;
+};
+
+const rollingDd = (
+  metric: EMetric.DdDaily | EMetric.DdMonthly,
+  phMap: TDatePriceMap,
+  startDate: string,
+  endDate: string,
+  period: number,
+) => {
+  const data: ReturnType<TRollingReturns> = [];
+
+  const startIndex = dates.dayWiseIndex(
+    dayjs(startDate)
+      .add(1, metric === EMetric.DdDaily ? 'day' : 'month')
+      .format('YYYY-MM-DD'),
+  );
+
+  const endIndex = dates.dayWiseIndex(endDate);
+
+  for (let index = startIndex; index <= endIndex; index++) {
+    const date = dates.dayWise[index];
+
+    const periodEnd = date;
+    const periodStart = getDateStr(dayjs(date).subtract(period, 'years'));
+
+    data.push({
+      date,
+      value: downside(metric === EMetric.DdDaily ? 'daily' : 'monthly', phMap, periodStart, periodEnd),
+    });
+  }
+
+  return data;
+};
+
+const rollingSharpeRatio = (phMap: TDatePriceMap, startDate: string, endDate: string, period: number) => {
+  const data: ReturnType<TRollingReturns> = [];
+
+  const startIndex = dates.dayWiseIndex(dayjs(startDate).add(1, 'month').format('YYYY-MM-DD'));
+  const endIndex = dates.dayWiseIndex(endDate);
+
+  for (let index = startIndex; index <= endIndex; index++) {
+    const date = dates.dayWise[index];
+
+    const periodEnd = date;
+    const periodStart = getDateStr(dayjs(date).subtract(period, 'years'));
+
+    data.push({
+      date,
+      value: sharpeRatio(phMap, periodStart, periodEnd),
+    });
+  }
+
+  return data;
+};
+
+const rollingSortinoRatio = (phMap: TDatePriceMap, startDate: string, endDate: string, period: number) => {
+  const data: ReturnType<TRollingReturns> = [];
+
+  const startIndex = dates.dayWiseIndex(dayjs(startDate).add(1, 'month').format('YYYY-MM-DD'));
+  const endIndex = dates.dayWiseIndex(endDate);
+
+  for (let index = startIndex; index <= endIndex; index++) {
+    const date = dates.dayWise[index];
+
+    const periodEnd = date;
+    const periodStart = getDateStr(dayjs(date).subtract(period, 'years'));
+
+    data.push({
+      date,
+      value: sortinoRatio(phMap, periodStart, periodEnd),
+    });
+  }
+
+  return data;
+};
+
+export const rollingReturns: TRollingReturns = (metric, period, phData) => {
+  if (phData.length === 0) return [];
+
+  const phMap = getDatePriceMap(phData);
+
+  const dateRange = getPriceHistoryDateRange(phData);
+  const startDate = getDateStr(dayjs(dateRange.min).add(period, 'years'));
+  const endDate = dateRange.max;
+
+  if (metric === EMetric.Xirr) {
+    return rollingXirr(phMap, startDate, endDate, period);
+  } else if (metric === EMetric.SdDaily || metric === EMetric.SdMonthly) {
+    return rollingSd(metric, phMap, startDate, endDate, period);
+  } else if (metric === EMetric.DdDaily || metric === EMetric.DdMonthly) {
+    return rollingDd(metric, phMap, startDate, endDate, period);
+  } else if (metric === EMetric.Sharpe) {
+    return rollingSharpeRatio(phMap, startDate, endDate, period);
+  } else {
+    return rollingSortinoRatio(phMap, startDate, endDate, period);
+  }
 };
 
 // export const rollingReturns2 = (period: number, phData: TPriceHistoryItem[]) => {
