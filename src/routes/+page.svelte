@@ -7,7 +7,7 @@
   import DropdownSmall from '$components/DropdownSmall.svelte';
   import Loader from '$components/Loader.svelte';
   import Radio from '$components/Radio.svelte';
-  import {runAfterPaint} from '$lib/events';
+  import {runOnIdle} from '$lib/events';
   import {formatMetric} from '$lib/format';
   import {isNotNullish, isNull} from '$lib/type';
   import {EFundType, type TFund} from '$types/funds';
@@ -115,10 +115,8 @@
 
   $effect(() => {
     const fn = (data: typeof statsRequestData) =>
-      requestIdleCallback(() => {
-        runAfterPaint(() => {
-          statsRequestDataDeferred = data;
-        });
+      runOnIdle(() => {
+        statsRequestDataDeferred = data;
       });
 
     fn(statsRequestData);
