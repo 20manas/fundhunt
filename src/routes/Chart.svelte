@@ -14,7 +14,7 @@
 
   import {min, max, average, median, stdDev} from '$lib/aggregates';
   import {waitForPaint} from '$lib/events';
-  import {formatNumber, formatPercentage} from '$lib/format';
+  import {formatMetric} from '$lib/format';
   import {isNotNull, isNull} from '$lib/type';
   import type {TFund} from '$types/funds';
   import {EMetric} from '$types/metrics';
@@ -71,9 +71,7 @@
     };
   });
 
-  let formatValue = $derived(
-    [EMetric.Sharpe, EMetric.Sortino].includes(props.metric) ? formatNumber : formatPercentage,
-  );
+  let formatValue = $derived(formatMetric(props.metric));
 
   const addChart = (element: HTMLDivElement, data: tProps['data']) => {
     const chart = createChart(element, {
@@ -305,10 +303,14 @@
 
   th {
     text-align: left;
-    padding: 10px 0;
+    padding: 10px;
+  }
+
+  tbody tr:hover {
+    background-color: #ffffff20;
   }
 
   td {
-    padding: 10px 0;
+    padding: 10px;
   }
 </style>

@@ -234,7 +234,7 @@
     display: flex;
     align-items: center;
     gap: 20px;
-    width: 600px;
+    width: 800px;
     max-width: 100%;
 
     @include mixins.for-mobile {

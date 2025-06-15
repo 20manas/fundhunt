@@ -35,7 +35,7 @@ export const sharpeRatio = (phMap: TDatePriceMap, startDate: string, endDate: st
 
     if (typeof price === 'undefined' || typeof priceBefore === 'undefined') {
       console.error(`map entry not found: ${date} or ${dateBefore}`);
-      throw new Error(`map entry not found: ${date}`);
+      continue;
     }
 
     values.push(((price - priceBefore) / priceBefore) * 100);

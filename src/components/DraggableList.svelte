@@ -79,7 +79,7 @@
   }
 
   li {
-    width: 600px;
+    width: 800px;
     max-width: 100%;
     background-color: rgb(20 20 20);
     border: 1px solid rgb(100 100 100);

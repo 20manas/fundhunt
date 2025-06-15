@@ -4,8 +4,8 @@
   import * as Ri from 'radashi';
   import type {Snippet} from 'svelte';
 
-  import Checkbox from '$components/Checkbox.svelte';
   import Loader from '$components/Loader.svelte';
+  import Radio from '$components/Radio.svelte';
   import {clickOutside} from '$lib/dom';
   import {runAfterPaint} from '$lib/events';
   import {EImage} from '$lib/images';
@@ -24,7 +24,7 @@
     ignoreLocation: true,
   };
 
-  interface tDropdownProps<V, D> {
+  interface tDropdownSmallProps<V, D> {
     label?: string;
     placeholder?: string;
     row: Snippet<[D]>;
@@ -33,12 +33,10 @@
     width?: number | 'auto';
     isLoading?: boolean;
     isDisabled?: boolean;
-    values: Set<V>;
-    query: string;
-    setQuery: (query: string) => unknown;
+    value: V;
   }
 
-  let {values = $bindable(), ...props}: tDropdownProps<Value, Data> = $props();
+  let {value = $bindable(), ...props}: tDropdownSmallProps<Value, Data> = $props();
   let show = $state(false);
   let fuse = $derived(new Fuse(props.data, FUSE_OPTIONS));
   let query = $state('');
@@ -54,14 +52,8 @@
 
   let inputEl: HTMLInputElement;
 
-  const onClick = (value: Value) => {
-    if (values.size >= 20) return;
-
-    if (values.has(value)) {
-      values.delete(value);
-    } else {
-      values.add(value);
-    }
+  const onClick = (val: Value) => {
+    value = val;
   };
 
   const updateQueryDebounced = Ri.debounce({delay: 400}, (newQuery: string) => {
@@ -69,19 +61,7 @@
   });
 
   $effect(() => {
-    query = props.query;
-
-    runAfterPaint(() => {
-      show = true;
-    });
-  });
-
-  $effect(() => {
     updateQueryDebounced(query);
-  });
-
-  $effect(() => {
-    props.setQuery(queryDebounced);
   });
 
   $effect(() => {
@@ -90,11 +70,11 @@
       return;
     }
 
-    if (show) {
-      inputEl.focus();
-    } else {
-      inputEl.blur();
-    }
+    runAfterPaint(() => {
+      if (show) {
+        inputEl.focus();
+      }
+    });
   });
 
   document.addEventListener('keydown', ev => {
@@ -129,30 +109,34 @@
       if (!props.isDisabled) show = !show;
     }}
   >
-    <input
-      bind:this={inputEl}
-      type="text"
-      class={clsx('input', {['__readOnly']: props.hideSearch ?? props.isDisabled})}
-      placeholder={props.placeholder}
-      value={show ? query : ''}
-      oninput={(ev: Event) => {
-        query = (ev.target as HTMLInputElement).value;
-      }}
-      onkeydown={(ev: KeyboardEvent) => {
-        if (ev.key !== 'Enter') return;
+    {#if !show && props.data.length > 0}
+      {@render props.row((props.data.find(item => item.value === value) as tListItem<Value, Data>).data)}
+    {:else if show}
+      <input
+        bind:this={inputEl}
+        type="text"
+        class={clsx('input', {['__readOnly']: props.hideSearch ?? props.isDisabled})}
+        placeholder={props.placeholder}
+        value={query}
+        oninput={(ev: Event) => {
+          query = (ev.target as HTMLInputElement).value;
+        }}
+        onkeydown={(ev: KeyboardEvent) => {
+          if (ev.key !== 'Enter') return;
 
-        updateQueryDebounced.flush((ev.target as HTMLInputElement).value);
+          updateQueryDebounced.flush((ev.target as HTMLInputElement).value);
 
-        runAfterPaint(() => {
-          if (filteredItems.length > 0) onClick(filteredItems[0].value);
-        });
-      }}
-      onclick={ev => {
-        if (props.hideSearch) return;
-        ev.stopPropagation();
-        show = true;
-      }}
-    />
+          runAfterPaint(() => {
+            if (filteredItems.length > 0) onClick(filteredItems[0].value);
+          });
+        }}
+        onclick={ev => {
+          if (props.hideSearch) return;
+          ev.stopPropagation();
+          show = true;
+        }}
+      />
+    {/if}
     {#if show && query.length > 0}
       <img
         src={EImage.Cross}
@@ -168,7 +152,7 @@
         }}
       />
     {/if}
-    <img class="arrow" src={EImage.DropdownArrow} width={15} height={15} alt="" />
+    <img class="arrow" src={EImage.DropdownArrow} width={10} height={10} alt="" />
   </span>
   {#if (props.isLoading || props.data.length > 0) && show}
     <ul class="list">
@@ -187,8 +171,8 @@
               onClick(item.value);
             }}
           >
-            <Checkbox isChecked={values.has(item.value)} isDisabled={item.isDisabled} class="Dropdown_checkbox"
-              >{@render props.row(item.data)}</Checkbox
+            <Radio isChecked={value === item.value} isDisabled={item.isDisabled} class="Dropdown_checkbox"
+              >{@render props.row(item.data)}</Radio
             >
           </li>
         {/each}
@@ -204,7 +188,6 @@
     position: relative;
     cursor: default;
     width: $width;
-    margin: 0 auto;
     max-width: 100%;
   }
 
@@ -213,14 +196,14 @@
     gap: 20px;
     align-items: center;
     background-color: rgb(50 50 50);
-    border-radius: 10px;
-    padding: 20px;
-    height: 60px;
+    border-radius: 5px;
+    padding: 10px;
+    height: 40px;
     width: 100%;
-    font-size: 20px;
+    font-size: 16px;
 
     @include mixins.for-mobile {
-      font-size: 18px;
+      font-size: 12px;
     }
 
     &.__disabled {
@@ -245,6 +228,10 @@
     }
   }
 
+  .arrow {
+    margin-left: auto;
+  }
+
   .cross {
     opacity: 0.4;
   }
@@ -256,15 +243,13 @@
   .list {
     position: absolute;
     background-color: rgb(50 50 50);
-
-    /* padding: 20px; */
-    padding: 10px 0;
-    border-radius: 10px;
+    padding: 5px 0;
+    border-radius: 5px;
     flex-direction: column;
     width: 100%;
     margin: 10px 0 0;
     box-shadow: 0 15px 34px rgb(0 0 0 / 25%);
-    max-height: 300px;
+    max-height: 250px;
     overflow: auto;
     z-index: 5;
   }
@@ -276,7 +261,7 @@
     display: flex;
     gap: 10px;
     align-items: center;
-    padding: 10px 20px;
+    padding: 10px;
 
     &:first-of-type {
       margin: 0;

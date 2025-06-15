@@ -4,28 +4,40 @@
   import {queryParam} from 'sveltekit-search-params';
 
   import Checkbox from '$components/Checkbox.svelte';
+  import DropdownSmall from '$components/DropdownSmall.svelte';
   import Loader from '$components/Loader.svelte';
   import Radio from '$components/Radio.svelte';
   import {runAfterPaint} from '$lib/events';
+  import {formatMetric} from '$lib/format';
+  import {isNotNullish, isNull} from '$lib/type';
   import {EFundType, type TFund} from '$types/funds';
   import {EMetric} from '$types/metrics';
 
   import Chart from './Chart.svelte';
   import FundSelector from './FundSelector.svelte';
+  import {getIndexFundList} from './funds.svelte';
   import logo from './logo.webp';
   import {getStats, type TStatsRequestData} from './stats.svelte';
 
-  const PERIODS = [1, 3, 5, 7, 10] as const;
+  const PERIODS: number[] = [1, 3, 5, 7, 10] as const;
 
   const metricTitles: Record<EMetric, string> = {
-    [EMetric.Xirr]: 'Rolling XIRR of SIP',
-    [EMetric.SdMonthly]: 'Rolling Standard Deviation of Monthly Returns',
-    [EMetric.SdDaily]: 'Rolling Standard Deviation of Daily Returns',
-    [EMetric.DdMonthly]: 'Rolling Downside Deviation of Monthly Returns',
-    [EMetric.DdDaily]: 'Rolling Downside Deviation of Daily Returns',
-    [EMetric.Sharpe]: 'Rolling Sharpe Ratio',
-    [EMetric.Sortino]: 'Rolling Sortino Ratio',
+    [EMetric.Xirr]: 'XIRR of SIP',
+    [EMetric.Cagr]: 'CAGR (Compound Annual Growth Rate)',
+    [EMetric.SdMonthly]: 'Standard Deviation of Monthly Returns',
+    [EMetric.SdDaily]: 'Standard Deviation of Daily Returns',
+    [EMetric.DdMonthly]: 'Downside Deviation of Monthly Returns',
+    [EMetric.DdDaily]: 'Downside Deviation of Daily Returns',
+    [EMetric.Sharpe]: 'Sharpe Ratio',
+    [EMetric.Sortino]: 'Sortino Ratio',
+    [EMetric.DMC]: 'Down-Market Capture Ratio',
+    [EMetric.UMC]: 'Up-Market Capture Ratio',
   };
+
+  const selectedMetricQuery = queryParam<EMetric>('metric', {
+    encode: (value: EMetric) => value,
+    decode: (str: string | null) => str as EMetric | null,
+  });
 
   const encodePeriod = (periods: number[]) => {
     const str = encodeURIComponent(periods.join(','));
@@ -36,37 +48,67 @@
   };
 
   const decodePeriod = (str: string | null) =>
-    decodeURIComponent(str ?? '')
-      .split(',')
-      .map(num => parseInt(num));
+    isNotNullish(str)
+      ? decodeURIComponent(str)
+          .split(',')
+          .map(num => parseInt(num))
+      : null;
 
   const selectedPeriodsQuery = queryParam(
     'periods',
     {
       encode: encodePeriod,
       decode: decodePeriod,
-      defaultValue: [3, 5],
     },
     {pushHistory: false},
   );
 
-  let selectedPeriods = $state<Set<number>>(new SvelteSet(get(selectedPeriodsQuery)));
+  const fundListAPI = getIndexFundList();
 
-  let selectedMetric = $state<EMetric>(EMetric.Xirr);
+  let selectedMetric = $state<EMetric>(get(selectedMetricQuery) ?? EMetric.Xirr);
+  let selectedPeriods = $state<Set<number>>(
+    new SvelteSet(get(selectedPeriodsQuery) ?? (isNull(get(selectedMetricQuery)) ? [3, 5] : [])),
+  );
+  let listAllMetrics = $state([EMetric.Xirr, EMetric.DMC, EMetric.Sharpe].includes(selectedMetric) ? false : true);
 
   const showAggregatesQuery = queryParam('agg', {
     encode: (show: boolean) => (show ? 'true' : undefined),
     decode: (str: string | null) => str === 'true',
     defaultValue: false,
   });
+
+  const showLifetimeQuery = queryParam('alltime', {
+    encode: (show: boolean) => (show ? 'true' : undefined),
+    decode: (str: string | null) => str === 'true',
+    defaultValue: false,
+  });
+
+  const selectedBenchmarkValueQuery = queryParam(
+    'bench',
+    {
+      encode: (value: string) => value,
+      decode: (str: string | null) => str,
+      defaultValue: 'NIFTY 500',
+    },
+    {showDefaults: false},
+  );
+
   let showAggregates = $state(get(showAggregatesQuery));
+  let showLifetime = $state(get(showLifetimeQuery));
 
   let orderedFunds = $state<TFund[]>([]);
 
+  let selectedBenchmark = $derived<TFund | null>(
+    $fundListAPI.data?.find(item => item.value === $selectedBenchmarkValueQuery) ?? null,
+  );
+
   let statsRequestData: TStatsRequestData = $derived({
     metric: selectedMetric,
-    periods: PERIODS.filter(period => selectedPeriods.has(period)),
+    periods: (['all-time', ...PERIODS] as const).filter(period =>
+      period === 'all-time' ? showLifetime : selectedPeriods.has(period),
+    ),
     funds: orderedFunds,
+    benchmark: [EMetric.DMC, EMetric.UMC].includes(selectedMetric) ? selectedBenchmark : null,
   });
 
   let statsRequestDataDeferred = $state<typeof statsRequestData>(statsRequestData);
@@ -91,8 +133,11 @@
   $effect(() => {
     mfTitles = orderedFunds.filter(fund => fund.type === EFundType.MutualFund);
 
-    // console.info($statsAPI.data.map(item => item.list.map(e => e.data.map(x => x.value))));
     $statsAPI.data;
+  });
+
+  $effect(() => {
+    $selectedMetricQuery = selectedMetric;
   });
 
   $effect(() => {
@@ -104,8 +149,11 @@
   });
 
   $effect(() => {
-    if (!$statsAPI.someSuccess || isStatsAPIInitialized) return;
-    console.log('Stats API success', $statsAPI.someSuccess, $statsAPI.isLoading, $statsAPI.isFetching);
+    $showLifetimeQuery = showLifetime;
+  });
+
+  $effect(() => {
+    if (!$statsAPI.someSuccess || isStatsAPIInitialized || selectedPeriods.size === 0) return;
 
     isStatsAPIInitialized = true;
 
@@ -137,7 +185,18 @@
   />
 
   <div class="periods">
-    <h2>Metrics</h2>
+    <h2>
+      Metrics
+      <div class="listAllMetrics">
+        <Checkbox
+          isChecked={listAllMetrics}
+          onChange={(isChecked: boolean) => {
+            listAllMetrics = isChecked;
+          }}>Show all metrics</Checkbox
+        >
+      </div>
+    </h2>
+    <h3>Return Metrics</h3>
     <div class="periods-list">
       <Radio
         isChecked={selectedMetric === EMetric.Xirr}
@@ -147,22 +206,56 @@
           }
         }}>Rolling XIRR of SIP</Radio
       >
+      {#if listAllMetrics}
+        <Radio
+          isChecked={selectedMetric === EMetric.Cagr}
+          onChange={(isChecked: boolean) => {
+            if (isChecked) {
+              selectedMetric = EMetric.Cagr;
+            }
+          }}>Rolling CAGR (Compound Annual Growth Rate)</Radio
+        >
+        <Radio
+          isChecked={selectedMetric === EMetric.UMC}
+          onChange={(isChecked: boolean) => {
+            if (isChecked) {
+              selectedMetric = EMetric.UMC;
+            }
+          }}>Rolling Up-Market Capture</Radio
+        >
+      {/if}
+    </div>
+    <h3>Risk Metrics</h3>
+    <div class="periods-list">
       <Radio
-        isChecked={selectedMetric === EMetric.SdMonthly || selectedMetric === EMetric.SdDaily}
+        isChecked={selectedMetric === EMetric.DMC}
         onChange={(isChecked: boolean) => {
-          if (isChecked && selectedMetric !== EMetric.SdMonthly && selectedMetric !== EMetric.SdDaily) {
-            selectedMetric = EMetric.SdMonthly;
+          if (isChecked) {
+            selectedMetric = EMetric.DMC;
           }
-        }}>Rolling Standard Deviation</Radio
+        }}>Rolling Down-Market Capture</Radio
       >
-      <Radio
-        isChecked={selectedMetric === EMetric.DdMonthly || selectedMetric === EMetric.DdDaily}
-        onChange={(isChecked: boolean) => {
-          if (isChecked && selectedMetric !== EMetric.DdMonthly && selectedMetric !== EMetric.DdDaily) {
-            selectedMetric = EMetric.DdMonthly;
-          }
-        }}>Rolling Downside Deviation</Radio
-      >
+      {#if listAllMetrics}
+        <Radio
+          isChecked={selectedMetric === EMetric.SdMonthly || selectedMetric === EMetric.SdDaily}
+          onChange={(isChecked: boolean) => {
+            if (isChecked && selectedMetric !== EMetric.SdMonthly && selectedMetric !== EMetric.SdDaily) {
+              selectedMetric = EMetric.SdMonthly;
+            }
+          }}>Rolling Standard Deviation</Radio
+        >
+        <Radio
+          isChecked={selectedMetric === EMetric.DdMonthly || selectedMetric === EMetric.DdDaily}
+          onChange={(isChecked: boolean) => {
+            if (isChecked && selectedMetric !== EMetric.DdMonthly && selectedMetric !== EMetric.DdDaily) {
+              selectedMetric = EMetric.DdMonthly;
+            }
+          }}>Rolling Downside Deviation</Radio
+        >
+      {/if}
+    </div>
+    <h3>Risk-Adjusted Return Metrics</h3>
+    <div class="periods-list">
       <Radio
         isChecked={selectedMetric === EMetric.Sharpe}
         onChange={(isChecked: boolean) => {
@@ -171,19 +264,21 @@
           }
         }}>Rolling Sharpe Ratio</Radio
       >
-      <Radio
-        isChecked={selectedMetric === EMetric.Sortino}
-        onChange={(isChecked: boolean) => {
-          if (isChecked) {
-            selectedMetric = EMetric.Sortino;
-          }
-        }}>Rolling Sortino Ratio</Radio
-      >
+      {#if listAllMetrics}
+        <Radio
+          isChecked={selectedMetric === EMetric.Sortino}
+          onChange={(isChecked: boolean) => {
+            if (isChecked) {
+              selectedMetric = EMetric.Sortino;
+            }
+          }}>Rolling Sortino Ratio</Radio
+        >
+      {/if}
     </div>
   </div>
   {#if selectedMetric === EMetric.SdDaily || selectedMetric === EMetric.SdMonthly}
     <div class="periods">
-      <h3>Standard Deviation Options</h3>
+      <h2>Standard Deviation Options</h2>
       <Radio
         isChecked={selectedMetric === EMetric.SdMonthly}
         onChange={(isChecked: boolean) => {
@@ -203,7 +298,33 @@
     </div>
   {/if}
 
+  {#snippet DropdownItem(fund: TFund)}
+    {fund.title}
+  {/snippet}
+
+  {#if [EMetric.DMC, EMetric.UMC].includes(selectedMetric)}
+    <div class="periods">
+      <hr />
+      <h2>
+        {#if selectedMetric === EMetric.DMC}
+          Down-Market Capture Options
+        {:else if selectedMetric === EMetric.UMC}
+          Up-Market Capture Options
+        {/if}
+      </h2>
+      <h3>Benchmark</h3>
+      <DropdownSmall
+        placeholder="Select Benchmark"
+        bind:value={$selectedBenchmarkValueQuery}
+        isLoading={$fundListAPI.isLoading}
+        row={DropdownItem}
+        data={$fundListAPI.data?.map(fund => ({value: fund.value, data: fund, search: fund.title})) ?? []}
+      />
+    </div>
+  {/if}
+
   <div class="periods">
+    <hr />
     <h2>Rolling Periods</h2>
     <div class="periods-list">
       {#each PERIODS as period}
@@ -222,21 +343,53 @@
   </div>
 
   <div class="options">
+    <hr />
     <h2>General Options</h2>
-    <Checkbox
-      isChecked={showAggregates}
-      onChange={isChecked => {
-        showAggregates = isChecked;
-      }}>Show Aggregate Stats: Min, Average, Median, Max and Standard Deviation</Checkbox
-    >
+    <div class="periods-list">
+      <Checkbox
+        isChecked={showAggregates}
+        onChange={isChecked => {
+          showAggregates = isChecked;
+        }}>Also Show Aggregate Stats: Min, Average, Median, Max and Standard Deviation</Checkbox
+      >
+      <Checkbox
+        isChecked={showLifetime}
+        onChange={isChecked => {
+          showLifetime = isChecked;
+        }}>Also Show Total / All-time Values for Selected Metric</Checkbox
+      >
+    </div>
+    <hr />
   </div>
 
-  {#each $statsAPI.data as stats}
+  {#if showLifetime && $statsAPI.data.findIndex(item => item.period === 'all-time') !== -1}
+    <h2>All-time {metricTitles[selectedMetric]}</h2>
+    <table>
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Date Range</th>
+          <th>Value</th>
+        </tr>
+      </thead>
+      <tbody>
+        {#each $statsAPI.data.find(item => item.period === 'all-time')?.list ?? [] as row}
+          <tr>
+            <td>{row.title}</td>
+            <td>{row.startDate} to {row.endDate}</td>
+            <td>{isNotNullish(row.data) && formatMetric(selectedMetric)(row.data)} </td>
+          </tr>
+        {/each}
+      </tbody>
+    </table>
+  {/if}
+
+  {#each $statsAPI.data.filter(item => item.period !== 'all-time') as stats}
     <article class="chart-container">
       <Chart
         {showAggregates}
         metric={selectedMetric}
-        title={`${stats.period}-Year ${metricTitles[selectedMetric]}`}
+        title={`${stats.period}-Year Rolling ${metricTitles[selectedMetric]}`}
         data={stats.list}
       />
     </article>
@@ -255,6 +408,40 @@
       gap: 20px;
       padding: 20px;
     }
+  }
+
+  h2 {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+
+  .listAllMetrics {
+    font-size: 16px;
+    font-weight: 400;
+    display: inline-block;
+  }
+
+  hr {
+    height: 1px;
+    background-color: white;
+    border: none;
+  }
+
+  table {
+    @include mixins.for-desktop {
+      min-width: 600px;
+    }
+
+    @include mixins.for-mobile {
+      width: 100%;
+    }
+  }
+
+  th,
+  td {
+    padding: 10px;
+    text-align: left;
   }
 
   header {
@@ -296,7 +483,7 @@
     display: flex;
     flex-direction: column;
     gap: 20px;
-    width: 600px;
+    width: 800px;
     max-width: 100%;
   }
 
@@ -304,13 +491,14 @@
     display: flex;
     gap: 30px;
     flex-wrap: wrap;
+    padding: 0 20px;
   }
 
   .options {
     display: flex;
     flex-direction: column;
     gap: 20px;
-    width: 600px;
+    width: 800px;
     max-width: 100%;
   }
 
