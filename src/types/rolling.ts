@@ -1,4 +1,4 @@
-import type {EMetric} from '$types/metrics';
+import type {TMetricConfig} from '$types/metrics';
 import type {TPriceHistoryItem} from '$types/price-history';
 
 export interface TDerivedValue {
@@ -9,14 +9,12 @@ export interface TDerivedValue {
 type tMaybePromise<T> = T | Promise<T>;
 
 export type TRollingReturns = (
-  metric: EMetric,
   period: number,
   priceHistory: TPriceHistoryItem[],
-  benchmarkHistory?: TPriceHistoryItem[],
+  metricConfig: TMetricConfig,
 ) => tMaybePromise<TDerivedValue[]>;
 
 export type TAlltimeReturns = (
-  metric: EMetric,
   priceHistory: TPriceHistoryItem[],
-  benchmarkHistory?: TPriceHistoryItem[],
+  metricConfig: TMetricConfig,
 ) => tMaybePromise<null | {value: number; startDate: string; endDate: string}>;

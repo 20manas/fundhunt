@@ -6,7 +6,7 @@ import type {TDatePriceMap} from '$lib/price-history';
 
 import {downside} from './downside';
 
-const MONTHLY_RISK_FREE_RETURN = (Math.pow(1.065, 1 / 12) - 1) * 100;
+const getMonthlyRiskFreeReturn = (annualReturn: number) => (Math.pow(1 + annualReturn / 100, 1 / 12) - 1) * 100;
 
 const monthBeforeMap = new Map<string, string>();
 
@@ -21,7 +21,7 @@ const getMonthBeforeDate = (date: string) => {
   return monthBefore;
 };
 
-export const sortinoRatio = (phMap: TDatePriceMap, startDate: string, endDate: string) => {
+export const sortinoRatio = (phMap: TDatePriceMap, startDate: string, endDate: string, riskFreeReturn: number) => {
   const values: number[] = [];
 
   const startIndex = dates.dayWiseIndex(startDate);
@@ -45,7 +45,7 @@ export const sortinoRatio = (phMap: TDatePriceMap, startDate: string, endDate: s
 
   if (monthlyReturn === null) return null;
 
-  const netReturn = monthlyReturn - MONTHLY_RISK_FREE_RETURN;
+  const netReturn = monthlyReturn - getMonthlyRiskFreeReturn(riskFreeReturn);
   // console.info('net return', monthlyReturn, netReturn, values);
   const annualReturn = (Math.pow(1 + netReturn / 100, 12) - 1) * 100;
 

@@ -1,0 +1,1 @@
+export const DEFAULT_RISK_FREE_RETURN = 6.5;

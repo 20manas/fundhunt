@@ -7,6 +7,7 @@
   import DropdownSmall from '$components/DropdownSmall.svelte';
   import Loader from '$components/Loader.svelte';
   import Radio from '$components/Radio.svelte';
+  import {DEFAULT_RISK_FREE_RETURN} from '$lib/constants';
   import {runOnIdle} from '$lib/events';
   import {formatMetric} from '$lib/format';
   import {isNotNullish, isNull} from '$lib/type';
@@ -83,6 +84,12 @@
     defaultValue: false,
   });
 
+  const riskFreeReturnQuery = queryParam('rfr', {
+    encode: (value: number) => (value !== DEFAULT_RISK_FREE_RETURN ? value.toString() : undefined),
+    decode: (str: string | null) => (typeof str === 'string' ? parseFloat(str) : null),
+    defaultValue: DEFAULT_RISK_FREE_RETURN,
+  });
+
   const selectedBenchmarkValueQuery = queryParam(
     'bench',
     {
@@ -95,20 +102,25 @@
 
   let showAggregates = $state(get(showAggregatesQuery));
   let showLifetime = $state(get(showLifetimeQuery));
+  let riskFreeReturn = $state(get(riskFreeReturnQuery));
+  let riskFreeReturnInput = $state(get(riskFreeReturnQuery).toString());
 
   let orderedFunds = $state<TFund[]>([]);
 
-  let selectedBenchmark = $derived<TFund | null>(
-    $fundListAPI.data?.find(item => item.value === $selectedBenchmarkValueQuery) ?? null,
+  let selectedBenchmark = $derived<TFund | undefined>(
+    $fundListAPI.data?.find(item => item.value === $selectedBenchmarkValueQuery) ?? undefined,
   );
 
   let statsRequestData: TStatsRequestData = $derived({
-    metric: selectedMetric,
     periods: (['all-time', ...PERIODS] as const).filter(period =>
       period === 'all-time' ? showLifetime : selectedPeriods.has(period),
     ),
     funds: orderedFunds,
-    benchmark: [EMetric.DMC, EMetric.UMC].includes(selectedMetric) ? selectedBenchmark : null,
+    metricConfig: {
+      metric: selectedMetric,
+      benchmark: [EMetric.DMC, EMetric.UMC].includes(selectedMetric) ? selectedBenchmark : undefined,
+      riskFreeReturn,
+    },
   });
 
   let statsRequestDataDeferred = $state<typeof statsRequestData>(statsRequestData);
@@ -148,6 +160,10 @@
 
   $effect(() => {
     $showLifetimeQuery = showLifetime;
+  });
+
+  $effect(() => {
+    $riskFreeReturnQuery = riskFreeReturn;
   });
 
   $effect(() => {
@@ -321,6 +337,29 @@
     </div>
   {/if}
 
+  {#if [EMetric.Sharpe, EMetric.Sortino].includes(selectedMetric)}
+    <div class="periods">
+      <hr />
+      <h2>
+        {#if selectedMetric === EMetric.Sharpe}
+          Sharpe Ratio Options
+        {:else if selectedMetric === EMetric.UMC}
+          Sortino Options
+        {/if}
+      </h2>
+      <h3>Risk-Free Return</h3>
+      <input type="number" min={-5} max={40} step={0.1} bind:value={riskFreeReturnInput} />
+      <button
+        class="button"
+        onclick={() => {
+          const num = parseFloat(riskFreeReturnInput);
+
+          if (!isNaN(num)) riskFreeReturn = num;
+        }}>Save</button
+      >
+    </div>
+  {/if}
+
   <div class="periods">
     <hr />
     <h2>Rolling Periods</h2>
@@ -412,6 +451,18 @@
     display: flex;
     justify-content: space-between;
     align-items: center;
+  }
+
+  input {
+    border: none;
+    padding: 10px;
+    border-radius: 10px;
+    background-color: rgb(50, 50, 50);
+    width: 200px;
+  }
+
+  .button {
+    width: 100px;
   }
 
   .listAllMetrics {

@@ -1,5 +1,6 @@
 import dayjs from 'dayjs';
 
+import {DEFAULT_RISK_FREE_RETURN} from '$lib/constants';
 import {dates, getDateStr} from '$lib/dates';
 import {getDatePriceMap, getPriceHistoryDateRange, type TDatePriceMap} from '$lib/price-history';
 import {isNull} from '$lib/type';
@@ -102,7 +103,13 @@ const rollingDd = (
   return data;
 };
 
-const rollingSharpeRatio = (phMap: TDatePriceMap, startDate: string, endDate: string, period: number) => {
+const rollingSharpeRatio = (
+  phMap: TDatePriceMap,
+  startDate: string,
+  endDate: string,
+  period: number,
+  riskFreeReturn: number,
+) => {
   const data: ReturnType<TRollingReturns> = [];
 
   const startIndex = dates.dayWiseIndex(dayjs(startDate).add(1, 'month').format('YYYY-MM-DD'));
@@ -116,14 +123,20 @@ const rollingSharpeRatio = (phMap: TDatePriceMap, startDate: string, endDate: st
 
     data.push({
       date,
-      value: sharpeRatio(phMap, periodStart, periodEnd),
+      value: sharpeRatio(phMap, periodStart, periodEnd, riskFreeReturn),
     });
   }
 
   return data;
 };
 
-const rollingSortinoRatio = (phMap: TDatePriceMap, startDate: string, endDate: string, period: number) => {
+const rollingSortinoRatio = (
+  phMap: TDatePriceMap,
+  startDate: string,
+  endDate: string,
+  period: number,
+  riskFreeReturn: number,
+) => {
   const data: ReturnType<TRollingReturns> = [];
 
   const startIndex = dates.dayWiseIndex(dayjs(startDate).add(1, 'month').format('YYYY-MM-DD'));
@@ -137,7 +150,7 @@ const rollingSortinoRatio = (phMap: TDatePriceMap, startDate: string, endDate: s
 
     data.push({
       date,
-      value: sortinoRatio(phMap, periodStart, periodEnd),
+      value: sortinoRatio(phMap, periodStart, periodEnd, riskFreeReturn),
     });
   }
 
@@ -219,7 +232,7 @@ const rollingCagr = (phMap: TDatePriceMap, startDate: string, endDate: string, p
   return data;
 };
 
-export const rollingReturns: TRollingReturns = (metric, period, phData, benchData) => {
+export const rollingReturns: TRollingReturns = (period, phData, options) => {
   if (phData.length === 0) return [];
 
   const phMap = getDatePriceMap(phData);
@@ -228,22 +241,22 @@ export const rollingReturns: TRollingReturns = (metric, period, phData, benchDat
   const startDate = getDateStr(dayjs(dateRange.min).add(period, 'years'));
   const endDate = dateRange.max;
 
-  if (metric === EMetric.Xirr) {
+  if (options.metric === EMetric.Xirr) {
     return rollingXirr(phMap, startDate, endDate, period);
-  } else if (metric === EMetric.SdDaily || metric === EMetric.SdMonthly) {
-    return rollingSd(metric, phMap, startDate, endDate, period);
-  } else if (metric === EMetric.DdDaily || metric === EMetric.DdMonthly) {
-    return rollingDd(metric, phMap, startDate, endDate, period);
-  } else if (metric === EMetric.Sharpe) {
-    return rollingSharpeRatio(phMap, startDate, endDate, period);
-  } else if (metric === EMetric.Sortino) {
-    return rollingSortinoRatio(phMap, startDate, endDate, period);
-  } else if (metric === EMetric.Cagr) {
+  } else if (options.metric === EMetric.SdDaily || options.metric === EMetric.SdMonthly) {
+    return rollingSd(options.metric, phMap, startDate, endDate, period);
+  } else if (options.metric === EMetric.DdDaily || options.metric === EMetric.DdMonthly) {
+    return rollingDd(options.metric, phMap, startDate, endDate, period);
+  } else if (options.metric === EMetric.Sharpe) {
+    return rollingSharpeRatio(phMap, startDate, endDate, period, options.riskFreeReturn ?? DEFAULT_RISK_FREE_RETURN);
+  } else if (options.metric === EMetric.Sortino) {
+    return rollingSortinoRatio(phMap, startDate, endDate, period, options.riskFreeReturn ?? DEFAULT_RISK_FREE_RETURN);
+  } else if (options.metric === EMetric.Cagr) {
     return rollingCagr(phMap, startDate, endDate, period);
   } else {
-    const benchMap = getDatePriceMap(benchData ?? []);
+    const benchMap = getDatePriceMap(options.benchmark ?? []);
 
-    if (metric === EMetric.DMC) {
+    if (options.metric === EMetric.DMC) {
       return rollingDownMarketCapture(phMap, benchMap, startDate, endDate, period);
     } else {
       return rollingUpMarketCapture(phMap, benchMap, startDate, endDate, period);
@@ -326,7 +339,7 @@ export const rollingReturns: TRollingReturns = (metric, period, phData, benchDat
 //   return data;
 // };
 
-export const allTimeReturns: TAlltimeReturns = (metric, phData, benchData) => {
+export const allTimeReturns: TAlltimeReturns = (phData, options) => {
   if (phData.length === 0) return null;
 
   const phMap = getDatePriceMap(phData);
@@ -334,27 +347,27 @@ export const allTimeReturns: TAlltimeReturns = (metric, phData, benchData) => {
   const monthlyMetrics = [EMetric.SdMonthly, EMetric.DdMonthly, EMetric.Sharpe, EMetric.Sortino];
 
   const dateRange = getPriceHistoryDateRange(phData);
-  const startDate = getDateStr(dayjs(dateRange.min).add(1, monthlyMetrics.includes(metric) ? 'month' : 'day'));
+  const startDate = getDateStr(dayjs(dateRange.min).add(1, monthlyMetrics.includes(options.metric) ? 'month' : 'day'));
   const endDate = dateRange.max;
 
   let value: number | null = null;
 
-  if (metric === EMetric.Xirr) {
+  if (options.metric === EMetric.Xirr) {
     value = xirr(phMap, startDate, endDate);
-  } else if (metric === EMetric.SdDaily || metric === EMetric.SdMonthly) {
-    value = sd(metric === EMetric.SdDaily ? 'daily' : 'monthly', phMap, startDate, endDate);
-  } else if (metric === EMetric.DdDaily || metric === EMetric.DdMonthly) {
-    value = downside(metric === EMetric.DdDaily ? 'daily' : 'monthly', phMap, startDate, endDate);
-  } else if (metric === EMetric.Sharpe) {
-    value = sharpeRatio(phMap, startDate, endDate);
-  } else if (metric === EMetric.Sortino) {
-    value = sortinoRatio(phMap, startDate, endDate);
-  } else if (metric === EMetric.Cagr) {
+  } else if (options.metric === EMetric.SdDaily || options.metric === EMetric.SdMonthly) {
+    value = sd(options.metric === EMetric.SdDaily ? 'daily' : 'monthly', phMap, startDate, endDate);
+  } else if (options.metric === EMetric.DdDaily || options.metric === EMetric.DdMonthly) {
+    value = downside(options.metric === EMetric.DdDaily ? 'daily' : 'monthly', phMap, startDate, endDate);
+  } else if (options.metric === EMetric.Sharpe) {
+    value = sharpeRatio(phMap, startDate, endDate, options.riskFreeReturn ?? DEFAULT_RISK_FREE_RETURN);
+  } else if (options.metric === EMetric.Sortino) {
+    value = sortinoRatio(phMap, startDate, endDate, options.riskFreeReturn ?? DEFAULT_RISK_FREE_RETURN);
+  } else if (options.metric === EMetric.Cagr) {
     value = cagr(phMap, startDate, endDate);
   } else {
-    const benchMap = getDatePriceMap(benchData ?? []);
+    const benchMap = getDatePriceMap(options.benchmark ?? []);
 
-    if (metric === EMetric.DMC) {
+    if (options.metric === EMetric.DMC) {
       value = downMarketCapture(phMap, benchMap, startDate, endDate);
     } else {
       value = upMarketCapture(phMap, benchMap, startDate, endDate);

@@ -2,20 +2,23 @@ import {createQueries} from '@tanstack/svelte-query';
 import {type Readable, derived} from 'svelte/store';
 
 import {fetchPriceHistory} from '$lib/price-history';
-import {isNotNull, isNotUndefined} from '$lib/type';
+import {isNotNullish, isNotUndefined} from '$lib/type';
 import type {TFund} from '$types/funds';
-import type {EMetric} from '$types/metrics';
+import type {TMetricConfig} from '$types/metrics';
 import type {TDerivedValue} from '$types/rolling';
 
 const rollingWorker = new ComlinkWorker<typeof import('../workers/rolling')>(
   new URL('../workers/rolling.ts', import.meta.url),
 );
 
+type tMetricConfig = Omit<TMetricConfig, 'benchmark'> & {
+  benchmark?: TFund;
+};
+
 export interface TStatsRequestData {
-  metric: EMetric;
   periods: Array<number | 'all-time'>;
   funds: TFund[];
-  benchmark: TFund | null;
+  metricConfig: tMetricConfig;
 }
 
 type tResult = TFund &
@@ -74,29 +77,32 @@ const getCombinedData = (resultList: tResult[]): tCombinedResult[] => {
 export const getStats = (requestData: Readable<TStatsRequestData>) =>
   createQueries({
     queries: derived(requestData, $requestData => {
-      const list: Array<{period: number | 'all-time'; metric: EMetric; funds: TFund[]; benchmark: TFund | null}> = [];
+      const list: Array<{period: number | 'all-time'; funds: TFund[]; metricConfig: tMetricConfig}> = [];
 
       for (const period of $requestData.periods) {
         list.push({
           period,
-          metric: $requestData.metric,
           funds: $requestData.funds,
-          benchmark: $requestData.benchmark,
+          metricConfig: $requestData.metricConfig,
         });
       }
 
-      type tQueryKey = Readonly<[{fund: TFund; period: number | 'all-time'; metric: EMetric}]>;
+      type tQueryKey = Readonly<[{fund: TFund; period: number | 'all-time'; metricConfig: tMetricConfig}]>;
 
       return list
         .flatMap(item => item.funds.map(fund => ({fund, ...item})))
         .map(item => ({
           queryKey: [item] as const,
           queryFn: async ({signal}: {queryKey: tQueryKey; signal: AbortSignal}) => {
-            const benchmark = isNotNull(item.benchmark) ? await fetchPriceHistory(item.benchmark, signal) : undefined;
+            const benchmark = isNotNullish(item.metricConfig.benchmark)
+              ? await fetchPriceHistory(item.metricConfig.benchmark, signal)
+              : undefined;
             const data = await fetchPriceHistory(item.fund, signal);
 
+            const metricConfig = {...item.metricConfig, benchmark};
+
             if (item.period === 'all-time') {
-              const allTime = await rollingWorker.allTimeReturns(item.metric, data, benchmark);
+              const allTime = await rollingWorker.allTimeReturns(data, metricConfig);
 
               return {
                 ...item.fund,
@@ -109,7 +115,7 @@ export const getStats = (requestData: Readable<TStatsRequestData>) =>
               return {
                 ...item.fund,
                 period: item.period,
-                data: await rollingWorker.rollingReturns(item.metric, item.period, data, benchmark),
+                data: await rollingWorker.rollingReturns(item.period, data, metricConfig),
               };
             }
           },
