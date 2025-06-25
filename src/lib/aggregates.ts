@@ -1,4 +1,4 @@
-import {isNull, isUndefined} from './type';
+import {isNull} from './type';
 
 export const min = (data: number[]) => {
   if (data.length === 0) return null;

@@ -77,6 +77,7 @@ const rollingDd = (
   startDate: string,
   endDate: string,
   period: number,
+  mar: number,
 ) => {
   const data: ReturnType<TRollingReturns> = [];
 
@@ -96,7 +97,7 @@ const rollingDd = (
 
     data.push({
       date,
-      value: downside(metric === EMetric.DdDaily ? 'daily' : 'monthly', phMap, periodStart, periodEnd),
+      value: downside(metric === EMetric.DdDaily ? 'daily' : 'monthly', phMap, periodStart, periodEnd, mar),
     });
   }
 
@@ -136,6 +137,7 @@ const rollingSortinoRatio = (
   endDate: string,
   period: number,
   riskFreeReturn: number,
+  mar: number,
 ) => {
   const data: ReturnType<TRollingReturns> = [];
 
@@ -150,7 +152,7 @@ const rollingSortinoRatio = (
 
     data.push({
       date,
-      value: sortinoRatio(phMap, periodStart, periodEnd, riskFreeReturn),
+      value: sortinoRatio(phMap, periodStart, periodEnd, riskFreeReturn, mar),
     });
   }
 
@@ -241,16 +243,19 @@ export const rollingReturns: TRollingReturns = (period, phData, options) => {
   const startDate = getDateStr(dayjs(dateRange.min).add(period, 'years'));
   const endDate = dateRange.max;
 
+  const mar = options.mar ?? DEFAULT_RISK_FREE_RETURN;
+  const rfr = options.riskFreeReturn ?? DEFAULT_RISK_FREE_RETURN;
+
   if (options.metric === EMetric.Xirr) {
     return rollingXirr(phMap, startDate, endDate, period);
   } else if (options.metric === EMetric.SdDaily || options.metric === EMetric.SdMonthly) {
     return rollingSd(options.metric, phMap, startDate, endDate, period);
   } else if (options.metric === EMetric.DdDaily || options.metric === EMetric.DdMonthly) {
-    return rollingDd(options.metric, phMap, startDate, endDate, period);
+    return rollingDd(options.metric, phMap, startDate, endDate, period, mar);
   } else if (options.metric === EMetric.Sharpe) {
-    return rollingSharpeRatio(phMap, startDate, endDate, period, options.riskFreeReturn ?? DEFAULT_RISK_FREE_RETURN);
+    return rollingSharpeRatio(phMap, startDate, endDate, period, rfr);
   } else if (options.metric === EMetric.Sortino) {
-    return rollingSortinoRatio(phMap, startDate, endDate, period, options.riskFreeReturn ?? DEFAULT_RISK_FREE_RETURN);
+    return rollingSortinoRatio(phMap, startDate, endDate, period, rfr, mar);
   } else if (options.metric === EMetric.Cagr) {
     return rollingCagr(phMap, startDate, endDate, period);
   } else {
@@ -350,6 +355,9 @@ export const allTimeReturns: TAlltimeReturns = (phData, options) => {
   const startDate = getDateStr(dayjs(dateRange.min).add(1, monthlyMetrics.includes(options.metric) ? 'month' : 'day'));
   const endDate = dateRange.max;
 
+  const mar = options.mar ?? DEFAULT_RISK_FREE_RETURN;
+  const rfr = options.riskFreeReturn ?? DEFAULT_RISK_FREE_RETURN;
+
   let value: number | null = null;
 
   if (options.metric === EMetric.Xirr) {
@@ -357,11 +365,11 @@ export const allTimeReturns: TAlltimeReturns = (phData, options) => {
   } else if (options.metric === EMetric.SdDaily || options.metric === EMetric.SdMonthly) {
     value = sd(options.metric === EMetric.SdDaily ? 'daily' : 'monthly', phMap, startDate, endDate);
   } else if (options.metric === EMetric.DdDaily || options.metric === EMetric.DdMonthly) {
-    value = downside(options.metric === EMetric.DdDaily ? 'daily' : 'monthly', phMap, startDate, endDate);
+    value = downside(options.metric === EMetric.DdDaily ? 'daily' : 'monthly', phMap, startDate, endDate, mar);
   } else if (options.metric === EMetric.Sharpe) {
-    value = sharpeRatio(phMap, startDate, endDate, options.riskFreeReturn ?? DEFAULT_RISK_FREE_RETURN);
+    value = sharpeRatio(phMap, startDate, endDate, rfr);
   } else if (options.metric === EMetric.Sortino) {
-    value = sortinoRatio(phMap, startDate, endDate, options.riskFreeReturn ?? DEFAULT_RISK_FREE_RETURN);
+    value = sortinoRatio(phMap, startDate, endDate, rfr, mar);
   } else if (options.metric === EMetric.Cagr) {
     value = cagr(phMap, startDate, endDate);
   } else {

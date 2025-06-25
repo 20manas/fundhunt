@@ -90,6 +90,12 @@
     defaultValue: DEFAULT_RISK_FREE_RETURN,
   });
 
+  const marQuery = queryParam('mar', {
+    encode: (value: number) => (value !== DEFAULT_RISK_FREE_RETURN ? value.toString() : undefined),
+    decode: (str: string | null) => (typeof str === 'string' ? parseFloat(str) : null),
+    defaultValue: DEFAULT_RISK_FREE_RETURN,
+  });
+
   const selectedBenchmarkValueQuery = queryParam(
     'bench',
     {
@@ -102,8 +108,12 @@
 
   let showAggregates = $state(get(showAggregatesQuery));
   let showLifetime = $state(get(showLifetimeQuery));
+
   let riskFreeReturn = $state(get(riskFreeReturnQuery));
   let riskFreeReturnInput = $state(get(riskFreeReturnQuery).toString());
+
+  let mar = $state(get(marQuery));
+  let marInput = $state(get(marQuery).toString());
 
   let orderedFunds = $state<TFund[]>([]);
 
@@ -120,6 +130,7 @@
       metric: selectedMetric,
       benchmark: [EMetric.DMC, EMetric.UMC].includes(selectedMetric) ? selectedBenchmark : undefined,
       riskFreeReturn,
+      mar,
     },
   });
 
@@ -164,6 +175,10 @@
 
   $effect(() => {
     $riskFreeReturnQuery = riskFreeReturn;
+  });
+
+  $effect(() => {
+    $marQuery = mar;
   });
 
   $effect(() => {
@@ -290,73 +305,79 @@
       {/if}
     </div>
   </div>
-  {#if selectedMetric === EMetric.SdDaily || selectedMetric === EMetric.SdMonthly}
-    <div class="periods">
-      <h2>Standard Deviation Options</h2>
-      <Radio
-        isChecked={selectedMetric === EMetric.SdMonthly}
-        onChange={(isChecked: boolean) => {
-          if (isChecked) {
-            selectedMetric = EMetric.SdMonthly;
-          }
-        }}>Use Monthly Returns</Radio
-      >
-      <Radio
-        isChecked={selectedMetric === EMetric.SdDaily}
-        onChange={(isChecked: boolean) => {
-          if (isChecked) {
-            selectedMetric = EMetric.SdDaily;
-          }
-        }}>Use Daily Returns</Radio
-      >
-    </div>
-  {/if}
-
-  {#snippet DropdownItem(fund: TFund)}
-    {fund.title}
-  {/snippet}
-
-  {#if [EMetric.DMC, EMetric.UMC].includes(selectedMetric)}
+  {#if ![EMetric.Xirr, EMetric.Cagr].includes(selectedMetric)}
     <div class="periods">
       <hr />
       <h2>
-        {#if selectedMetric === EMetric.DMC}
-          Down-Market Capture Options
-        {:else if selectedMetric === EMetric.UMC}
-          Up-Market Capture Options
-        {/if}
+        Options for {metricTitles[selectedMetric]}
       </h2>
-      <h3>Benchmark</h3>
-      <DropdownSmall
-        placeholder="Select Benchmark"
-        bind:value={$selectedBenchmarkValueQuery}
-        isLoading={$fundListAPI.isLoading}
-        row={DropdownItem}
-        data={$fundListAPI.data?.map(fund => ({value: fund.value, data: fund, search: fund.title})) ?? []}
-      />
-    </div>
-  {/if}
+      {#if [EMetric.SdDaily, EMetric.SdMonthly, EMetric.DdDaily, EMetric.DdMonthly].includes(selectedMetric)}
+        <Radio
+          isChecked={[EMetric.SdMonthly, EMetric.DdMonthly].includes(selectedMetric)}
+          onChange={(isChecked: boolean) => {
+            if (!isChecked) return;
 
-  {#if [EMetric.Sharpe, EMetric.Sortino].includes(selectedMetric)}
-    <div class="periods">
-      <hr />
-      <h2>
-        {#if selectedMetric === EMetric.Sharpe}
-          Sharpe Ratio Options
-        {:else if selectedMetric === EMetric.UMC}
-          Sortino Options
-        {/if}
-      </h2>
-      <h3>Risk-Free Return</h3>
-      <input type="number" min={-5} max={40} step={0.1} bind:value={riskFreeReturnInput} />
-      <button
-        class="button"
-        onclick={() => {
-          const num = parseFloat(riskFreeReturnInput);
+            if (selectedMetric === EMetric.SdDaily) {
+              selectedMetric = EMetric.SdMonthly;
+            }
+            if (selectedMetric === EMetric.DdDaily) {
+              selectedMetric = EMetric.DdMonthly;
+            }
+          }}>Use Monthly Returns</Radio
+        >
+        <Radio
+          isChecked={[EMetric.SdDaily, EMetric.DdDaily].includes(selectedMetric)}
+          onChange={(isChecked: boolean) => {
+            if (!isChecked) return;
 
-          if (!isNaN(num)) riskFreeReturn = num;
-        }}>Save</button
-      >
+            if (selectedMetric === EMetric.SdMonthly) {
+              selectedMetric = EMetric.DdDaily;
+            }
+            if (selectedMetric === EMetric.DdMonthly) {
+              selectedMetric = EMetric.DdDaily;
+            }
+          }}>Use Daily Returns</Radio
+        >
+      {/if}
+
+      {#if [EMetric.DMC, EMetric.UMC].includes(selectedMetric)}
+        <h3>Benchmark</h3>
+
+        {#snippet DropdownItem(fund: TFund)}
+          {fund.title}
+        {/snippet}
+
+        <DropdownSmall
+          placeholder="Select Benchmark"
+          bind:value={$selectedBenchmarkValueQuery}
+          isLoading={$fundListAPI.isLoading}
+          row={DropdownItem}
+          data={$fundListAPI.data?.map(fund => ({value: fund.value, data: fund, search: fund.title})) ?? []}
+        />
+      {/if}
+
+      {#if [EMetric.Sharpe, EMetric.Sortino].includes(selectedMetric)}
+        <h3>Risk-Free Return</h3>
+        <input type="number" min={-5} max={40} step={0.1} bind:value={riskFreeReturnInput} />
+      {/if}
+      {#if [EMetric.Sortino, EMetric.DdDaily, EMetric.DdMonthly].includes(selectedMetric)}
+        <h3>MAR (Minimum Acceptable Return) for Downside Deviation</h3>
+        <input type="number" min={-5} max={40} step={0.1} bind:value={marInput} />
+      {/if}
+      {#if [EMetric.Sharpe, EMetric.Sortino, EMetric.DdDaily, EMetric.DdMonthly].includes(selectedMetric)}
+        <button
+          class="button"
+          onclick={() => {
+            const parsedRfr = parseFloat(riskFreeReturnInput);
+
+            if (!isNaN(parsedRfr)) riskFreeReturn = parsedRfr;
+
+            const parsedMar = parseFloat(marInput);
+
+            if (!isNaN(parsedMar)) mar = parsedMar;
+          }}>Save</button
+        >
+      {/if}
     </div>
   {/if}
 

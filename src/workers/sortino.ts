@@ -21,7 +21,13 @@ const getMonthBeforeDate = (date: string) => {
   return monthBefore;
 };
 
-export const sortinoRatio = (phMap: TDatePriceMap, startDate: string, endDate: string, riskFreeReturn: number) => {
+export const sortinoRatio = (
+  phMap: TDatePriceMap,
+  startDate: string,
+  endDate: string,
+  riskFreeReturn: number,
+  mar: number,
+) => {
   const values: number[] = [];
 
   const startIndex = dates.dayWiseIndex(startDate);
@@ -49,7 +55,7 @@ export const sortinoRatio = (phMap: TDatePriceMap, startDate: string, endDate: s
   // console.info('net return', monthlyReturn, netReturn, values);
   const annualReturn = (Math.pow(1 + netReturn / 100, 12) - 1) * 100;
 
-  const downsideDeviation = downside('monthly', phMap, startDate, endDate);
+  const downsideDeviation = downside('monthly', phMap, startDate, endDate, mar);
 
   // if (stdDeviation === null) return null;
 

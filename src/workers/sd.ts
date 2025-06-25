@@ -38,7 +38,7 @@ export const sd = (returnsPeriod: 'daily' | 'monthly', phMap: TDatePriceMap, sta
       continue;
     }
 
-    values.push(Math.log(price / priceBefore));
+    values.push((price - priceBefore) / priceBefore);
   }
 
   const result = stdDev(values);

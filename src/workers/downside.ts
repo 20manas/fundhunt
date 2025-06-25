@@ -4,8 +4,8 @@ import {downsideDev} from '$lib/aggregates';
 import {dates} from '$lib/dates';
 import type {TDatePriceMap} from '$lib/price-history';
 
-const MONTHLY_RISK_FREE_RETURN = (Math.pow(1.065, 1 / 12) - 1) * 100;
-const DAILY_RISK_FREE_RETURN = (Math.pow(1.065, 1 / 252) - 1) * 100;
+const getMonthlyMar = (annualReturn: number) => (Math.pow(1 + annualReturn / 100, 1 / 12) - 1) * 100;
+const getDailyMar = (annualReturn: number) => (Math.pow(1 + annualReturn / 100, 1 / 252) - 1) * 100;
 
 const ROOT_DAILY = Math.sqrt(252);
 const ROOT_MONTHLY = Math.sqrt(12);
@@ -28,6 +28,7 @@ export const downside = (
   phMap: TDatePriceMap,
   startDate: string,
   endDate: string,
+  mar: number,
 ) => {
   const values: number[] = [];
 
@@ -46,10 +47,10 @@ export const downside = (
       continue;
     }
 
-    values.push(Math.log(price / priceBefore) * 100);
+    values.push(((price - priceBefore) / priceBefore) * 100);
   }
 
-  const result = downsideDev(values, returnsPeriod === 'daily' ? DAILY_RISK_FREE_RETURN : MONTHLY_RISK_FREE_RETURN);
+  const result = downsideDev(values, returnsPeriod === 'daily' ? getDailyMar(mar) : getMonthlyMar(mar));
 
   return result * (returnsPeriod === 'daily' ? ROOT_DAILY : ROOT_MONTHLY);
 };

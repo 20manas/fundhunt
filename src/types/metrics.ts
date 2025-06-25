@@ -17,4 +17,5 @@ export interface TMetricConfig {
   metric: EMetric;
   benchmark?: TPriceHistoryItem[];
   riskFreeReturn?: number;
+  mar?: number;
 }
