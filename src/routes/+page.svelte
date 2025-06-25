@@ -25,10 +25,8 @@
   const metricTitles: Record<EMetric, string> = {
     [EMetric.Xirr]: 'XIRR of SIP',
     [EMetric.Cagr]: 'CAGR (Compound Annual Growth Rate)',
-    [EMetric.SdMonthly]: 'Standard Deviation of Monthly Returns',
-    [EMetric.SdDaily]: 'Standard Deviation of Daily Returns',
-    [EMetric.DdMonthly]: 'Downside Deviation of Monthly Returns',
-    [EMetric.DdDaily]: 'Downside Deviation of Daily Returns',
+    [EMetric.StdDev]: 'Standard Deviation',
+    [EMetric.Downside]: 'Downside Deviation',
     [EMetric.Sharpe]: 'Sharpe Ratio',
     [EMetric.Sortino]: 'Sortino Ratio',
     [EMetric.DMC]: 'Down-Market Capture Ratio',
@@ -266,18 +264,18 @@
       >
       {#if listAllMetrics}
         <Radio
-          isChecked={selectedMetric === EMetric.SdMonthly || selectedMetric === EMetric.SdDaily}
+          isChecked={selectedMetric === EMetric.StdDev}
           onChange={(isChecked: boolean) => {
-            if (isChecked && selectedMetric !== EMetric.SdMonthly && selectedMetric !== EMetric.SdDaily) {
-              selectedMetric = EMetric.SdMonthly;
+            if (isChecked && selectedMetric !== EMetric.StdDev) {
+              selectedMetric = EMetric.StdDev;
             }
           }}>Rolling Standard Deviation</Radio
         >
         <Radio
-          isChecked={selectedMetric === EMetric.DdMonthly || selectedMetric === EMetric.DdDaily}
+          isChecked={selectedMetric === EMetric.Downside}
           onChange={(isChecked: boolean) => {
-            if (isChecked && selectedMetric !== EMetric.DdMonthly && selectedMetric !== EMetric.DdDaily) {
-              selectedMetric = EMetric.DdMonthly;
+            if (isChecked && selectedMetric !== EMetric.Downside) {
+              selectedMetric = EMetric.Downside;
             }
           }}>Rolling Downside Deviation</Radio
         >
@@ -305,40 +303,12 @@
       {/if}
     </div>
   </div>
-  {#if ![EMetric.Xirr, EMetric.Cagr].includes(selectedMetric)}
+  {#if ![EMetric.Xirr, EMetric.Cagr, EMetric.StdDev].includes(selectedMetric)}
     <div class="periods">
       <hr />
       <h2>
         Options for {metricTitles[selectedMetric]}
       </h2>
-      {#if [EMetric.SdDaily, EMetric.SdMonthly, EMetric.DdDaily, EMetric.DdMonthly].includes(selectedMetric)}
-        <Radio
-          isChecked={[EMetric.SdMonthly, EMetric.DdMonthly].includes(selectedMetric)}
-          onChange={(isChecked: boolean) => {
-            if (!isChecked) return;
-
-            if (selectedMetric === EMetric.SdDaily) {
-              selectedMetric = EMetric.SdMonthly;
-            }
-            if (selectedMetric === EMetric.DdDaily) {
-              selectedMetric = EMetric.DdMonthly;
-            }
-          }}>Use Monthly Returns</Radio
-        >
-        <Radio
-          isChecked={[EMetric.SdDaily, EMetric.DdDaily].includes(selectedMetric)}
-          onChange={(isChecked: boolean) => {
-            if (!isChecked) return;
-
-            if (selectedMetric === EMetric.SdMonthly) {
-              selectedMetric = EMetric.DdDaily;
-            }
-            if (selectedMetric === EMetric.DdMonthly) {
-              selectedMetric = EMetric.DdDaily;
-            }
-          }}>Use Daily Returns</Radio
-        >
-      {/if}
 
       {#if [EMetric.DMC, EMetric.UMC].includes(selectedMetric)}
         <h3>Benchmark</h3>
@@ -360,11 +330,11 @@
         <h3>Risk-Free Return</h3>
         <input type="number" min={-5} max={40} step={0.1} bind:value={riskFreeReturnInput} />
       {/if}
-      {#if [EMetric.Sortino, EMetric.DdDaily, EMetric.DdMonthly].includes(selectedMetric)}
+      {#if [EMetric.Sortino, EMetric.Downside].includes(selectedMetric)}
         <h3>MAR (Minimum Acceptable Return) for Downside Deviation</h3>
         <input type="number" min={-5} max={40} step={0.1} bind:value={marInput} />
       {/if}
-      {#if [EMetric.Sharpe, EMetric.Sortino, EMetric.DdDaily, EMetric.DdMonthly].includes(selectedMetric)}
+      {#if [EMetric.Sharpe, EMetric.Sortino, EMetric.Downside].includes(selectedMetric)}
         <button
           class="button"
           onclick={() => {

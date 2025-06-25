@@ -82,6 +82,7 @@
         background: {type: ColorType.Solid, color: 'transparent'},
         textColor: 'white',
         attributionLogo: false,
+        fontSize: 16,
       },
       grid: {
         vertLines: {
@@ -96,6 +97,9 @@
           visible: false,
           labelVisible: false,
         },
+        vertLine: {
+          labelBackgroundColor: '#1c947b',
+        },
       },
       handleScale: {
         axisDoubleClickReset: true,
@@ -106,6 +110,7 @@
       },
       localization: {
         priceFormatter: formatValue,
+        dateFormat: 'MMM yyyy',
       },
     });
 
@@ -149,7 +154,7 @@
         const color = colors[i];
 
         const newSeries = chart.addSeries(AreaSeries, {
-          // title: series.name,
+          // title: fund.title,
           lineWidth: 2,
           lineColor: color,
           topColor: 'transparent',

@@ -1,5 +1,3 @@
-import dayjs from 'dayjs';
-
 import {average} from '$lib/aggregates';
 import {dates} from '$lib/dates';
 import type {TDatePriceMap} from '$lib/price-history';
@@ -7,19 +5,6 @@ import type {TDatePriceMap} from '$lib/price-history';
 import {downside} from './downside';
 
 const getMonthlyRiskFreeReturn = (annualReturn: number) => (Math.pow(1 + annualReturn / 100, 1 / 12) - 1) * 100;
-
-const monthBeforeMap = new Map<string, string>();
-
-const getMonthBeforeDate = (date: string) => {
-  if (monthBeforeMap.has(date)) {
-    return monthBeforeMap.get(date) as string;
-  }
-
-  const monthBefore = dayjs(date).subtract(1, 'month').format('YYYY-MM-DD');
-  monthBeforeMap.set(date, monthBefore);
-
-  return monthBefore;
-};
 
 export const sortinoRatio = (
   phMap: TDatePriceMap,
@@ -30,12 +15,13 @@ export const sortinoRatio = (
 ) => {
   const values: number[] = [];
 
-  const startIndex = dates.dayWiseIndex(startDate);
-  const endIndex = dates.dayWiseIndex(endDate);
+  const startIndex = dates.monthWiseIndex(startDate);
+  const endIndex = dates.monthWiseIndex(endDate);
 
   for (let index = startIndex; index <= endIndex; index++) {
-    const date = dates.dayWise[index];
-    const dateBefore = getMonthBeforeDate(date);
+    const date = dates.monthWise[index];
+    const dateBefore = dates.monthWise[index - 1];
+
     const price = phMap.get(date);
     const priceBefore = phMap.get(dateBefore);
 
@@ -52,12 +38,10 @@ export const sortinoRatio = (
   if (monthlyReturn === null) return null;
 
   const netReturn = monthlyReturn - getMonthlyRiskFreeReturn(riskFreeReturn);
-  // console.info('net return', monthlyReturn, netReturn, values);
+
   const annualReturn = (Math.pow(1 + netReturn / 100, 12) - 1) * 100;
 
-  const downsideDeviation = downside('monthly', phMap, startDate, endDate, mar);
-
-  // if (stdDeviation === null) return null;
+  const downsideDeviation = downside(phMap, startDate, endDate, mar);
 
   return annualReturn / downsideDeviation;
 };

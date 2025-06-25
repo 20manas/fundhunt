@@ -9,7 +9,7 @@ export const getSellingPrice = (map: TDatePriceMap, startDate: string, endDate: 
   const startIndex = dates.monthWiseIndex(startDate);
   const endIndex = dates.monthWiseIndex(endDate);
 
-  for (let index = startIndex; index <= endIndex; index++) {
+  for (let index = startIndex; index < endIndex; index++) {
     const date = dates.monthWise[index];
     const price = map.get(date);
 
@@ -36,7 +36,7 @@ export const generateXirrData = (startDate: string, endDate: string, investment:
   const startIndex = dates.monthWiseIndex(startDate);
   const endIndex = dates.monthWiseIndex(endDate);
 
-  for (let index = startIndex; index <= endIndex; index++) {
+  for (let index = startIndex; index < endIndex; index++) {
     data.push({
       value: investment * -1,
       date: dates.monthWise[index],

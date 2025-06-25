@@ -21,11 +21,11 @@ import {xirr} from './xirr';
 const rollingXirr = (phMap: TDatePriceMap, startDate: string, endDate: string, period: number) => {
   const data: ReturnType<TRollingReturns> = [];
 
-  const startIndex = dates.dayWiseIndex(startDate);
-  const endIndex = dates.dayWiseIndex(endDate);
+  const startIndex = dates.monthWiseIndex(startDate);
+  const endIndex = dates.monthWiseIndex(endDate);
 
   for (let index = startIndex; index <= endIndex; index++) {
-    const date = dates.dayWise[index];
+    const date = dates.monthWise[index];
 
     const periodEnd = date;
     const periodStart = getDateStr(dayjs(date).subtract(period, 'years'));
@@ -39,65 +39,42 @@ const rollingXirr = (phMap: TDatePriceMap, startDate: string, endDate: string, p
   return data;
 };
 
-const rollingSd = (
-  metric: EMetric.SdDaily | EMetric.SdMonthly,
-  phMap: TDatePriceMap,
-  startDate: string,
-  endDate: string,
-  period: number,
-) => {
+const rollingSd = (phMap: TDatePriceMap, startDate: string, endDate: string, period: number) => {
   const data: ReturnType<TRollingReturns> = [];
 
-  const startIndex = dates.dayWiseIndex(
-    dayjs(startDate)
-      .add(1, metric === EMetric.SdDaily ? 'day' : 'month')
-      .format('YYYY-MM-DD'),
-  );
-
-  const endIndex = dates.dayWiseIndex(endDate);
+  const startIndex = dates.monthWiseIndex(startDate) + 1;
+  const endIndex = dates.monthWiseIndex(endDate);
 
   for (let index = startIndex; index <= endIndex; index++) {
-    const date = dates.dayWise[index];
+    const date = dates.monthWise[index];
 
     const periodEnd = date;
     const periodStart = getDateStr(dayjs(date).subtract(period, 'years'));
 
     data.push({
       date,
-      value: sd(metric === EMetric.SdDaily ? 'daily' : 'monthly', phMap, periodStart, periodEnd),
+      value: sd(phMap, periodStart, periodEnd),
     });
   }
 
   return data;
 };
 
-const rollingDd = (
-  metric: EMetric.DdDaily | EMetric.DdMonthly,
-  phMap: TDatePriceMap,
-  startDate: string,
-  endDate: string,
-  period: number,
-  mar: number,
-) => {
+const rollingDd = (phMap: TDatePriceMap, startDate: string, endDate: string, period: number, mar: number) => {
   const data: ReturnType<TRollingReturns> = [];
 
-  const startIndex = dates.dayWiseIndex(
-    dayjs(startDate)
-      .add(1, metric === EMetric.DdDaily ? 'day' : 'month')
-      .format('YYYY-MM-DD'),
-  );
-
-  const endIndex = dates.dayWiseIndex(endDate);
+  const startIndex = dates.monthWiseIndex(startDate) + 1;
+  const endIndex = dates.monthWiseIndex(endDate);
 
   for (let index = startIndex; index <= endIndex; index++) {
-    const date = dates.dayWise[index];
+    const date = dates.monthWise[index];
 
     const periodEnd = date;
     const periodStart = getDateStr(dayjs(date).subtract(period, 'years'));
 
     data.push({
       date,
-      value: downside(metric === EMetric.DdDaily ? 'daily' : 'monthly', phMap, periodStart, periodEnd, mar),
+      value: downside(phMap, periodStart, periodEnd, mar),
     });
   }
 
@@ -113,11 +90,11 @@ const rollingSharpeRatio = (
 ) => {
   const data: ReturnType<TRollingReturns> = [];
 
-  const startIndex = dates.dayWiseIndex(dayjs(startDate).add(1, 'month').format('YYYY-MM-DD'));
-  const endIndex = dates.dayWiseIndex(endDate);
+  const startIndex = dates.monthWiseIndex(startDate) + 1;
+  const endIndex = dates.monthWiseIndex(endDate);
 
   for (let index = startIndex; index <= endIndex; index++) {
-    const date = dates.dayWise[index];
+    const date = dates.monthWise[index];
 
     const periodEnd = date;
     const periodStart = getDateStr(dayjs(date).subtract(period, 'years'));
@@ -141,18 +118,22 @@ const rollingSortinoRatio = (
 ) => {
   const data: ReturnType<TRollingReturns> = [];
 
-  const startIndex = dates.dayWiseIndex(dayjs(startDate).add(1, 'month').format('YYYY-MM-DD'));
-  const endIndex = dates.dayWiseIndex(endDate);
+  const startIndex = dates.monthWiseIndex(startDate) + 1;
+  const endIndex = dates.monthWiseIndex(endDate);
 
   for (let index = startIndex; index <= endIndex; index++) {
-    const date = dates.dayWise[index];
+    const date = dates.monthWise[index];
 
     const periodEnd = date;
     const periodStart = getDateStr(dayjs(date).subtract(period, 'years'));
 
+    let value = sortinoRatio(phMap, periodStart, periodEnd, riskFreeReturn, mar);
+
+    if (isNull(value) || isNaN(value) || value === Infinity || value === -Infinity) value = null;
+
     data.push({
       date,
-      value: sortinoRatio(phMap, periodStart, periodEnd, riskFreeReturn, mar),
+      value,
     });
   }
 
@@ -168,11 +149,11 @@ const rollingDownMarketCapture = (
 ) => {
   const data: ReturnType<TRollingReturns> = [];
 
-  const startIndex = dates.dayWiseIndex(dayjs(startDate).add(1, 'month').format('YYYY-MM-DD'));
-  const endIndex = dates.dayWiseIndex(endDate);
+  const startIndex = dates.monthWiseIndex(startDate) + 1;
+  const endIndex = dates.monthWiseIndex(endDate);
 
   for (let index = startIndex; index <= endIndex; index++) {
-    const date = dates.dayWise[index];
+    const date = dates.monthWise[index];
 
     const periodEnd = date;
     const periodStart = getDateStr(dayjs(date).subtract(period, 'years'));
@@ -195,11 +176,11 @@ const rollingUpMarketCapture = (
 ) => {
   const data: ReturnType<TRollingReturns> = [];
 
-  const startIndex = dates.dayWiseIndex(dayjs(startDate).add(1, 'month').format('YYYY-MM-DD'));
-  const endIndex = dates.dayWiseIndex(endDate);
+  const startIndex = dates.monthWiseIndex(startDate) + 1;
+  const endIndex = dates.monthWiseIndex(endDate);
 
   for (let index = startIndex; index <= endIndex; index++) {
-    const date = dates.dayWise[index];
+    const date = dates.monthWise[index];
 
     const periodEnd = date;
     const periodStart = getDateStr(dayjs(date).subtract(period, 'years'));
@@ -216,11 +197,11 @@ const rollingUpMarketCapture = (
 const rollingCagr = (phMap: TDatePriceMap, startDate: string, endDate: string, period: number) => {
   const data: ReturnType<TRollingReturns> = [];
 
-  const startIndex = dates.dayWiseIndex(startDate);
-  const endIndex = dates.dayWiseIndex(endDate);
+  const startIndex = dates.monthWiseIndex(startDate);
+  const endIndex = dates.monthWiseIndex(endDate);
 
   for (let index = startIndex; index <= endIndex; index++) {
-    const date = dates.dayWise[index];
+    const date = dates.monthWise[index];
 
     const periodEnd = date;
     const periodStart = getDateStr(dayjs(date).subtract(period, 'years'));
@@ -248,10 +229,10 @@ export const rollingReturns: TRollingReturns = (period, phData, options) => {
 
   if (options.metric === EMetric.Xirr) {
     return rollingXirr(phMap, startDate, endDate, period);
-  } else if (options.metric === EMetric.SdDaily || options.metric === EMetric.SdMonthly) {
-    return rollingSd(options.metric, phMap, startDate, endDate, period);
-  } else if (options.metric === EMetric.DdDaily || options.metric === EMetric.DdMonthly) {
-    return rollingDd(options.metric, phMap, startDate, endDate, period, mar);
+  } else if (options.metric === EMetric.StdDev) {
+    return rollingSd(phMap, startDate, endDate, period);
+  } else if (options.metric === EMetric.Downside) {
+    return rollingDd(phMap, startDate, endDate, period, mar);
   } else if (options.metric === EMetric.Sharpe) {
     return rollingSharpeRatio(phMap, startDate, endDate, period, rfr);
   } else if (options.metric === EMetric.Sortino) {
@@ -349,7 +330,7 @@ export const allTimeReturns: TAlltimeReturns = (phData, options) => {
 
   const phMap = getDatePriceMap(phData);
 
-  const monthlyMetrics = [EMetric.SdMonthly, EMetric.DdMonthly, EMetric.Sharpe, EMetric.Sortino];
+  const monthlyMetrics = [EMetric.StdDev, EMetric.Downside, EMetric.Sharpe, EMetric.Sortino];
 
   const dateRange = getPriceHistoryDateRange(phData);
   const startDate = getDateStr(dayjs(dateRange.min).add(1, monthlyMetrics.includes(options.metric) ? 'month' : 'day'));
@@ -362,10 +343,10 @@ export const allTimeReturns: TAlltimeReturns = (phData, options) => {
 
   if (options.metric === EMetric.Xirr) {
     value = xirr(phMap, startDate, endDate);
-  } else if (options.metric === EMetric.SdDaily || options.metric === EMetric.SdMonthly) {
-    value = sd(options.metric === EMetric.SdDaily ? 'daily' : 'monthly', phMap, startDate, endDate);
-  } else if (options.metric === EMetric.DdDaily || options.metric === EMetric.DdMonthly) {
-    value = downside(options.metric === EMetric.DdDaily ? 'daily' : 'monthly', phMap, startDate, endDate, mar);
+  } else if (options.metric === EMetric.StdDev) {
+    value = sd(phMap, startDate, endDate);
+  } else if (options.metric === EMetric.Downside) {
+    value = downside(phMap, startDate, endDate, mar);
   } else if (options.metric === EMetric.Sharpe) {
     value = sharpeRatio(phMap, startDate, endDate, rfr);
   } else if (options.metric === EMetric.Sortino) {

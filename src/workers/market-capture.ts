@@ -1,20 +1,5 @@
-import dayjs from 'dayjs';
-
 import {dates} from '$lib/dates';
 import type {TDatePriceMap} from '$lib/price-history';
-
-const monthBeforeMap = new Map<string, string>();
-
-const getMonthBeforeDate = (date: string) => {
-  if (monthBeforeMap.has(date)) {
-    return monthBeforeMap.get(date) as string;
-  }
-
-  const monthBefore = dayjs(date).subtract(1, 'month').format('YYYY-MM-DD');
-  monthBeforeMap.set(date, monthBefore);
-
-  return monthBefore;
-};
 
 export const downsideMarketCaptureRatio = (
   phMap: TDatePriceMap,
@@ -25,12 +10,12 @@ export const downsideMarketCaptureRatio = (
   let benchSum = 0;
   let fundSum = 0;
 
-  const startIndex = dates.dayWiseIndex(startDate);
-  const endIndex = dates.dayWiseIndex(endDate);
+  const startIndex = dates.monthWiseIndex(startDate);
+  const endIndex = dates.monthWiseIndex(endDate);
 
   for (let index = startIndex; index <= endIndex; index++) {
-    const date = dates.dayWise[index];
-    const dateBefore = getMonthBeforeDate(date);
+    const date = dates.monthWise[index];
+    const dateBefore = dates.monthWise[index - 1];
 
     const priceBench = benchPhMap.get(date);
     const priceBenchBefore = benchPhMap.get(dateBefore);
@@ -68,12 +53,12 @@ export const upsideMarketCaptureRatio = (
   let benchSum = 0;
   let fundSum = 0;
 
-  const startIndex = dates.dayWiseIndex(startDate);
-  const endIndex = dates.dayWiseIndex(endDate);
+  const startIndex = dates.monthWiseIndex(startDate);
+  const endIndex = dates.monthWiseIndex(endDate);
 
   for (let index = startIndex; index <= endIndex; index++) {
-    const date = dates.dayWise[index];
-    const dateBefore = getMonthBeforeDate(date);
+    const date = dates.monthWise[index];
+    const dateBefore = dates.monthWise[index - 1];
 
     const priceBench = benchPhMap.get(date);
     const priceBenchBefore = benchPhMap.get(dateBefore);
