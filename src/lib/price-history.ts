@@ -17,11 +17,11 @@ export const fillMissingData = (data: TPriceHistoryItem[]) => {
 
   const newData: TPriceHistoryItem[] = [];
 
-  const startIndex = dates.dayWiseIndex(data[0].date.replace(/[\d]{2}$/, '01'));
-  const endIndex = dates.dayWiseIndex(data[data.length - 1].date);
+  const startIndex = dates.day.getIndex(data[0].date.replace(/[\d]{2}$/, '01'));
+  const endIndex = dates.day.getIndex(data[data.length - 1].date);
 
   for (let index = startIndex, phIndex = 0; index <= endIndex; index++) {
-    const date = dates.dayWise[index];
+    const date = dates.day.array[index];
 
     if (date !== data[phIndex].date && data.length > phIndex + 1) {
       newData.push({

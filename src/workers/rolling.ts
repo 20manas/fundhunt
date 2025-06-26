@@ -21,14 +21,14 @@ import {xirr} from './xirr';
 const rollingXirr = (phMap: TDatePriceMap, startDate: string, endDate: string, period: number) => {
   const data: ReturnType<TRollingReturns> = [];
 
-  const startIndex = dates.monthWiseIndex(startDate);
-  const endIndex = dates.monthWiseIndex(endDate);
+  const startIndex = dates.endOfMonth.getIndex(startDate);
+  const endIndex = dates.endOfMonth.getIndex(endDate, true);
 
   for (let index = startIndex; index <= endIndex; index++) {
-    const date = dates.monthWise[index];
+    const date = dates.endOfMonth.array[index];
 
     const periodEnd = date;
-    const periodStart = getDateStr(dayjs(date).subtract(period, 'years'));
+    const periodStart = getDateStr(dayjs(date).subtract(period, 'years').endOf('month'));
 
     data.push({
       date,
@@ -42,14 +42,14 @@ const rollingXirr = (phMap: TDatePriceMap, startDate: string, endDate: string, p
 const rollingSd = (phMap: TDatePriceMap, startDate: string, endDate: string, period: number) => {
   const data: ReturnType<TRollingReturns> = [];
 
-  const startIndex = dates.monthWiseIndex(startDate) + 1;
-  const endIndex = dates.monthWiseIndex(endDate);
+  const startIndex = dates.endOfMonth.getIndex(startDate) + 1;
+  const endIndex = dates.endOfMonth.getIndex(endDate, true);
 
   for (let index = startIndex; index <= endIndex; index++) {
-    const date = dates.monthWise[index];
+    const date = dates.endOfMonth.array[index];
 
     const periodEnd = date;
-    const periodStart = getDateStr(dayjs(date).subtract(period, 'years'));
+    const periodStart = getDateStr(dayjs(date).subtract(period, 'years').endOf('month'));
 
     data.push({
       date,
@@ -63,14 +63,14 @@ const rollingSd = (phMap: TDatePriceMap, startDate: string, endDate: string, per
 const rollingDd = (phMap: TDatePriceMap, startDate: string, endDate: string, period: number, mar: number) => {
   const data: ReturnType<TRollingReturns> = [];
 
-  const startIndex = dates.monthWiseIndex(startDate) + 1;
-  const endIndex = dates.monthWiseIndex(endDate);
+  const startIndex = dates.endOfMonth.getIndex(startDate) + 1;
+  const endIndex = dates.endOfMonth.getIndex(endDate, true);
 
   for (let index = startIndex; index <= endIndex; index++) {
-    const date = dates.monthWise[index];
+    const date = dates.endOfMonth.array[index];
 
     const periodEnd = date;
-    const periodStart = getDateStr(dayjs(date).subtract(period, 'years'));
+    const periodStart = getDateStr(dayjs(date).subtract(period, 'years').endOf('month'));
 
     data.push({
       date,
@@ -90,14 +90,14 @@ const rollingSharpeRatio = (
 ) => {
   const data: ReturnType<TRollingReturns> = [];
 
-  const startIndex = dates.monthWiseIndex(startDate) + 1;
-  const endIndex = dates.monthWiseIndex(endDate);
+  const startIndex = dates.endOfMonth.getIndex(startDate) + 1;
+  const endIndex = dates.endOfMonth.getIndex(endDate, true);
 
   for (let index = startIndex; index <= endIndex; index++) {
-    const date = dates.monthWise[index];
+    const date = dates.endOfMonth.array[index];
 
     const periodEnd = date;
-    const periodStart = getDateStr(dayjs(date).subtract(period, 'years'));
+    const periodStart = getDateStr(dayjs(date).subtract(period, 'years').endOf('month'));
 
     data.push({
       date,
@@ -118,14 +118,14 @@ const rollingSortinoRatio = (
 ) => {
   const data: ReturnType<TRollingReturns> = [];
 
-  const startIndex = dates.monthWiseIndex(startDate) + 1;
-  const endIndex = dates.monthWiseIndex(endDate);
+  const startIndex = dates.endOfMonth.getIndex(startDate) + 1;
+  const endIndex = dates.endOfMonth.getIndex(endDate, true);
 
   for (let index = startIndex; index <= endIndex; index++) {
-    const date = dates.monthWise[index];
+    const date = dates.endOfMonth.array[index];
 
     const periodEnd = date;
-    const periodStart = getDateStr(dayjs(date).subtract(period, 'years'));
+    const periodStart = getDateStr(dayjs(date).subtract(period, 'years').endOf('month'));
 
     let value = sortinoRatio(phMap, periodStart, periodEnd, riskFreeReturn, mar);
 
@@ -149,14 +149,14 @@ const rollingDownMarketCapture = (
 ) => {
   const data: ReturnType<TRollingReturns> = [];
 
-  const startIndex = dates.monthWiseIndex(startDate) + 1;
-  const endIndex = dates.monthWiseIndex(endDate);
+  const startIndex = dates.endOfMonth.getIndex(startDate) + 1;
+  const endIndex = dates.endOfMonth.getIndex(endDate, true);
 
   for (let index = startIndex; index <= endIndex; index++) {
-    const date = dates.monthWise[index];
+    const date = dates.endOfMonth.array[index];
 
     const periodEnd = date;
-    const periodStart = getDateStr(dayjs(date).subtract(period, 'years'));
+    const periodStart = getDateStr(dayjs(date).subtract(period, 'years').endOf('month'));
 
     data.push({
       date,
@@ -176,14 +176,14 @@ const rollingUpMarketCapture = (
 ) => {
   const data: ReturnType<TRollingReturns> = [];
 
-  const startIndex = dates.monthWiseIndex(startDate) + 1;
-  const endIndex = dates.monthWiseIndex(endDate);
+  const startIndex = dates.endOfMonth.getIndex(startDate) + 1;
+  const endIndex = dates.endOfMonth.getIndex(endDate, true);
 
   for (let index = startIndex; index <= endIndex; index++) {
-    const date = dates.monthWise[index];
+    const date = dates.endOfMonth.array[index];
 
     const periodEnd = date;
-    const periodStart = getDateStr(dayjs(date).subtract(period, 'years'));
+    const periodStart = getDateStr(dayjs(date).subtract(period, 'years').endOf('month'));
 
     data.push({
       date,
@@ -197,14 +197,14 @@ const rollingUpMarketCapture = (
 const rollingCagr = (phMap: TDatePriceMap, startDate: string, endDate: string, period: number) => {
   const data: ReturnType<TRollingReturns> = [];
 
-  const startIndex = dates.monthWiseIndex(startDate);
-  const endIndex = dates.monthWiseIndex(endDate);
+  const startIndex = dates.endOfMonth.getIndex(startDate);
+  const endIndex = dates.endOfMonth.getIndex(endDate, true);
 
   for (let index = startIndex; index <= endIndex; index++) {
-    const date = dates.monthWise[index];
+    const date = dates.endOfMonth.array[index];
 
     const periodEnd = date;
-    const periodStart = getDateStr(dayjs(date).subtract(period, 'years'));
+    const periodStart = getDateStr(dayjs(date).subtract(period, 'years').endOf('month'));
 
     data.push({
       date,
@@ -242,99 +242,25 @@ export const rollingReturns: TRollingReturns = (period, phData, options) => {
   } else {
     const benchMap = getDatePriceMap(options.benchmark ?? []);
 
+    const {min: startDateBench, max: endDateBench} = getPriceHistoryDateRange(options.benchmark ?? []);
+
+    const startDateMax = dates.max(startDate, startDateBench);
+    const endDateMin = dates.min(endDate, endDateBench);
+
     if (options.metric === EMetric.DMC) {
-      return rollingDownMarketCapture(phMap, benchMap, startDate, endDate, period);
+      return rollingDownMarketCapture(phMap, benchMap, startDateMax, endDateMin, period);
     } else {
-      return rollingUpMarketCapture(phMap, benchMap, startDate, endDate, period);
+      return rollingUpMarketCapture(phMap, benchMap, startDateMax, endDateMin, period);
     }
   }
 };
-
-// export const rollingReturns2 = (period: number, phData: TPriceHistoryItem[]) => {
-//   const data = [];
-
-//   const startDate = getDateStr(dayjs('2015-01-01'));
-//   const endDate = getDateStr(dayjs('2024-01-02'));
-
-//   const startIndex = dates.dayWiseIndex(startDate);
-//   const endIndex = dates.dayWiseIndex(endDate);
-
-//   console.time('phMap');
-//   const phMap = getDatePriceMap(phData);
-//   console.timeEnd('phMap');
-
-//   // console.time('datesGen');
-//   // const dateList = [];
-//   // for (let date = dayjs('2023-01-01'); date.isBefore(endDate); date = date.add(1, 'day')) {
-//   //   const periodEnd = date;
-//   //   const periodStart = date.subtract(period, 'years');
-
-//   //   dateList.push([periodStart, periodEnd]);
-//   // }
-//   // console.timeEnd('datesGen');
-
-//   console.time('sellingPrices');
-//   const sellingPrices = [];
-//   for (let index = startIndex; index <= endIndex; index++) {
-//     const date = dates.dayWise[index];
-
-//     const periodEnd = date;
-//     const periodStart = getDateStr(dayjs(date).subtract(period, 'years'));
-
-//     const sellingPrice = getSellingPrice(phMap, periodStart, periodEnd, INVESTMENT);
-//     sellingPrices.push(sellingPrice);
-//   }
-//   console.timeEnd('sellingPrices');
-
-//   console.time('xirrDataAll');
-//   const xirrDataAll = [];
-//   for (let index = startIndex; index <= endIndex; index++) {
-//     const date = dates.dayWise[index];
-
-//     const periodEnd = date;
-//     const periodStart = getDateStr(dayjs(date).subtract(period, 'years'));
-
-//     const sellingPrice = sellingPrices[index - startIndex];
-
-//     if (!sellingPrice) {
-//       console.log('no selling price', periodEnd);
-//       xirrDataAll.push([]);
-//       continue;
-//     }
-
-//     const xirrData = generateXirrData(periodStart, periodEnd, INVESTMENT, sellingPrice);
-
-//     xirrDataAll.push(xirrData);
-//   }
-//   console.timeEnd('xirrDataAll');
-
-//   console.time('xirr');
-//   for (let index = startIndex; index <= endIndex; index++) {
-//     const date = dates.dayWise[index];
-
-//     const periodEnd = date;
-//     const xirr = calcXIRR(xirrDataAll[index - startIndex]);
-
-//     data.push({
-//       date: periodEnd,
-//       xirr: xirr ? `${(xirr * 100).toFixed(2)}%` : null,
-//     });
-//   }
-//   console.timeEnd('xirr');
-
-//   return data;
-// };
 
 export const allTimeReturns: TAlltimeReturns = (phData, options) => {
   if (phData.length === 0) return null;
 
   const phMap = getDatePriceMap(phData);
 
-  const monthlyMetrics = [EMetric.StdDev, EMetric.Downside, EMetric.Sharpe, EMetric.Sortino];
-
-  const dateRange = getPriceHistoryDateRange(phData);
-  const startDate = getDateStr(dayjs(dateRange.min).add(1, monthlyMetrics.includes(options.metric) ? 'month' : 'day'));
-  const endDate = dateRange.max;
+  const {min: startDate, max: endDate} = getPriceHistoryDateRange(phData);
 
   const mar = options.mar ?? DEFAULT_RISK_FREE_RETURN;
   const rfr = options.riskFreeReturn ?? DEFAULT_RISK_FREE_RETURN;
@@ -356,10 +282,15 @@ export const allTimeReturns: TAlltimeReturns = (phData, options) => {
   } else {
     const benchMap = getDatePriceMap(options.benchmark ?? []);
 
+    const {min: startDateBench, max: endDateBench} = getPriceHistoryDateRange(options.benchmark ?? []);
+
+    const startDateMax = dates.max(startDate, startDateBench);
+    const endDateMin = dates.min(endDate, endDateBench);
+
     if (options.metric === EMetric.DMC) {
-      value = downMarketCapture(phMap, benchMap, startDate, endDate);
+      value = downMarketCapture(phMap, benchMap, startDateMax, endDateMin);
     } else {
-      value = upMarketCapture(phMap, benchMap, startDate, endDate);
+      value = upMarketCapture(phMap, benchMap, startDateMax, endDateMin);
     }
   }
 

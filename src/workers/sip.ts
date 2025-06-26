@@ -6,11 +6,11 @@ import type {XIRREntry} from './xirr';
 export const getSellingPrice = (map: TDatePriceMap, startDate: string, endDate: string, investment: number) => {
   let unitsBought = 0;
 
-  const startIndex = dates.monthWiseIndex(startDate);
-  const endIndex = dates.monthWiseIndex(endDate);
+  const startIndex = dates.startOfMonth.getIndex(startDate, true);
+  const endIndex = dates.startOfMonth.getIndex(endDate);
 
-  for (let index = startIndex; index < endIndex; index++) {
-    const date = dates.monthWise[index];
+  for (let index = startIndex; index <= endIndex; index++) {
+    const date = dates.startOfMonth.array[index];
     const price = map.get(date);
 
     if (typeof price === 'undefined') {
@@ -33,13 +33,13 @@ export const getSellingPrice = (map: TDatePriceMap, startDate: string, endDate: 
 export const generateXirrData = (startDate: string, endDate: string, investment: number, sellingPrice: number) => {
   const data: XIRREntry[] = [];
 
-  const startIndex = dates.monthWiseIndex(startDate);
-  const endIndex = dates.monthWiseIndex(endDate);
+  const startIndex = dates.startOfMonth.getIndex(startDate, true);
+  const endIndex = dates.startOfMonth.getIndex(endDate);
 
-  for (let index = startIndex; index < endIndex; index++) {
+  for (let index = startIndex; index <= endIndex; index++) {
     data.push({
       value: investment * -1,
-      date: dates.monthWise[index],
+      date: dates.startOfMonth.array[index],
     });
   }
 

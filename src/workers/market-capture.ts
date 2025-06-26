@@ -10,18 +10,18 @@ export const downsideMarketCaptureRatio = (
   let benchSum = 0;
   let fundSum = 0;
 
-  const startIndex = dates.monthWiseIndex(startDate);
-  const endIndex = dates.monthWiseIndex(endDate);
+  const startIndex = dates.endOfMonth.getIndex(startDate);
+  const endIndex = dates.endOfMonth.getIndex(endDate);
 
   for (let index = startIndex; index <= endIndex; index++) {
-    const date = dates.monthWise[index];
-    const dateBefore = dates.monthWise[index - 1];
+    const date = dates.endOfMonth.array[index];
+    const dateBefore = dates.endOfMonth.array[index - 1];
 
     const priceBench = benchPhMap.get(date);
     const priceBenchBefore = benchPhMap.get(dateBefore);
 
     if (typeof priceBench === 'undefined' || typeof priceBenchBefore === 'undefined') {
-      // console.error(`bench map entry not found: ${date} or ${dateBefore}`);
+      console.error(`bench map entry not found: ${date} or ${dateBefore}`);
       continue;
     }
 
@@ -33,7 +33,7 @@ export const downsideMarketCaptureRatio = (
     const priceBefore = phMap.get(dateBefore);
 
     if (typeof price === 'undefined' || typeof priceBefore === 'undefined') {
-      // console.error(`map entry not found: ${date} or ${dateBefore}`);
+      console.error(`map entry not found: ${date} or ${dateBefore}`);
       continue;
     }
 
@@ -53,18 +53,18 @@ export const upsideMarketCaptureRatio = (
   let benchSum = 0;
   let fundSum = 0;
 
-  const startIndex = dates.monthWiseIndex(startDate);
-  const endIndex = dates.monthWiseIndex(endDate);
+  const startIndex = dates.endOfMonth.getIndex(startDate);
+  const endIndex = dates.endOfMonth.getIndex(endDate);
 
   for (let index = startIndex; index <= endIndex; index++) {
-    const date = dates.monthWise[index];
-    const dateBefore = dates.monthWise[index - 1];
+    const date = dates.endOfMonth.array[index];
+    const dateBefore = dates.endOfMonth.array[index - 1];
 
     const priceBench = benchPhMap.get(date);
     const priceBenchBefore = benchPhMap.get(dateBefore);
 
     if (typeof priceBench === 'undefined' || typeof priceBenchBefore === 'undefined') {
-      // console.error(`bench map entry not found: ${date} or ${dateBefore}`);
+      console.error(`bench map entry not found: ${date} or ${dateBefore}`);
       continue;
     }
 
@@ -76,7 +76,7 @@ export const upsideMarketCaptureRatio = (
     const priceBefore = phMap.get(dateBefore);
 
     if (typeof price === 'undefined' || typeof priceBefore === 'undefined') {
-      // console.error(`map entry not found: ${date} or ${dateBefore}`);
+      console.error(`map entry not found: ${date} or ${dateBefore}`);
       continue;
     }
 

@@ -31,7 +31,7 @@ const getIRRResult = (data: XIRREntry[], rate: number): number => {
       continue;
     }
 
-    const daysFromFirst = dates.dayWiseDiff(entry.date, firstEntry.date);
+    const daysFromFirst = dates.day.diff(entry.date, firstEntry.date);
 
     result += entry.value / Math.pow(rate + 1, daysFromFirst / 365);
   }
@@ -51,7 +51,7 @@ const getIRRResultDerivative = (data: XIRREntry[], rate: number): number => {
       continue;
     }
 
-    const daysFromFirst = dates.dayWiseDiff(entry.date, firstEntry.date);
+    const daysFromFirst = dates.day.diff(entry.date, firstEntry.date);
     const fraction = daysFromFirst / 365;
 
     result -= (fraction * entry.value) / Math.pow(rate + 1, fraction + 1);

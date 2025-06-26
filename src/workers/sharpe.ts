@@ -9,12 +9,12 @@ const getMonthlyRiskFreeReturn = (annualReturn: number) => (Math.pow(1 + annualR
 export const sharpeRatio = (phMap: TDatePriceMap, startDate: string, endDate: string, riskFreeReturn: number) => {
   const values: number[] = [];
 
-  const startIndex = dates.monthWiseIndex(startDate);
-  const endIndex = dates.monthWiseIndex(endDate);
+  const startIndex = dates.endOfMonth.getIndex(startDate);
+  const endIndex = dates.endOfMonth.getIndex(endDate);
 
   for (let index = startIndex; index <= endIndex; index++) {
-    const date = dates.monthWise[index];
-    const dateBefore = dates.monthWise[index - 1];
+    const date = dates.endOfMonth.array[index];
+    const dateBefore = dates.endOfMonth.array[index - 1];
 
     const price = phMap.get(date);
     const priceBefore = phMap.get(dateBefore);
