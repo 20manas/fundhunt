@@ -115,8 +115,8 @@
 
   let orderedFunds = $state<TFund[]>([]);
 
-  let selectedBenchmark = $derived<TFund | undefined>(
-    $fundListAPI.data?.find(item => item.value === $selectedBenchmarkValueQuery) ?? undefined,
+  let selectedBenchmark = $derived<TFund | null>(
+    $fundListAPI.data?.find(item => item.value === $selectedBenchmarkValueQuery) ?? null,
   );
 
   let statsRequestData: TStatsRequestData = $derived({

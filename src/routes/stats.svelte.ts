@@ -2,7 +2,7 @@ import {createQueries} from '@tanstack/svelte-query';
 import {type Readable, derived} from 'svelte/store';
 
 import {fetchPriceHistory} from '$lib/price-history';
-import {isNotNullish, isNotUndefined} from '$lib/type';
+import {isNotNull, isNotNullish, isNotUndefined} from '$lib/type';
 import type {TFund} from '$types/funds';
 import type {TMetricConfig} from '$types/metrics';
 import type {TDerivedValue} from '$types/rolling';
@@ -12,7 +12,7 @@ const rollingWorker = new ComlinkWorker<typeof import('../workers/rolling')>(
 );
 
 type tMetricConfig = Omit<TMetricConfig, 'benchmark'> & {
-  benchmark?: TFund;
+  benchmark?: TFund | null;
 };
 
 export interface TStatsRequestData {
@@ -92,11 +92,16 @@ export const getStats = (requestData: Readable<TStatsRequestData>) =>
       return list
         .flatMap(item => item.funds.map(fund => ({fund, ...item})))
         .map(item => ({
+          enabled: isNotNull(item.metricConfig.benchmark),
           queryKey: [item] as const,
+          onerror: (error: unknown) => {
+            console.error('error in stats fetching data', item.fund.value, error);
+          },
           queryFn: async ({signal}: {queryKey: tQueryKey; signal: AbortSignal}) => {
             const benchmark = isNotNullish(item.metricConfig.benchmark)
               ? await fetchPriceHistory(item.metricConfig.benchmark, signal)
               : undefined;
+
             const data = await fetchPriceHistory(item.fund, signal);
 
             const metricConfig = {...item.metricConfig, benchmark};

@@ -109,13 +109,22 @@ const fetchMfPriceHistory = (fund: TFund, signal: AbortSignal) =>
     }));
   });
 
-export const fetchPriceHistory = Ri.memo(
-  async (fund: TFund, signal: AbortSignal) => {
-    const data = await (fund.type === EFundType.Index
-      ? fetchIndexPriceHistory(fund, signal)
-      : fetchMfPriceHistory(fund, signal));
+const cache = new Map<string, TPriceHistoryItem[]>();
 
-    return fillMissingData(data.filter(entry => isDateWithinRange(entry.date)));
-  },
-  {key: (fund: TFund) => fund.value.toString()},
-);
+export const fetchPriceHistory = async (fund: TFund, signal: AbortSignal) => {
+  const key = JSON.stringify(fund);
+
+  if (cache.has(key)) {
+    return cache.get(key) as TPriceHistoryItem[];
+  }
+
+  const data = await (fund.type === EFundType.Index
+    ? fetchIndexPriceHistory(fund, signal)
+    : fetchMfPriceHistory(fund, signal));
+
+  const completeData = fillMissingData(data.filter(entry => isDateWithinRange(entry.date)));
+
+  cache.set(key, completeData);
+
+  return completeData;
+};

@@ -21,6 +21,7 @@
   import type {TDerivedValue} from '$types/rolling';
 
   import Legend from './Legend.svelte';
+  // import {isMobileHook} from './mobile.svelte';
 
   const colors = [
     '#3cb49b',
@@ -73,6 +74,8 @@
 
   let formatValue = $derived(formatMetric(props.metric));
 
+  // const isMobile = isMobileHook();
+
   const addChart = (element: HTMLDivElement, data: tProps['data']) => {
     const chart = createChart(element, {
       width: element.clientWidth,
@@ -82,7 +85,8 @@
         background: {type: ColorType.Solid, color: 'transparent'},
         textColor: 'white',
         attributionLogo: false,
-        fontSize: 16,
+        // fontSize: isMobile ? 8 : 16,
+        fontSize: 14,
       },
       grid: {
         vertLines: {
