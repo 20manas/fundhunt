@@ -3,6 +3,7 @@
   import {get, toStore} from 'svelte/store';
   import {queryParam} from 'sveltekit-search-params';
 
+  import BucketManager from '$components/BucketManager.svelte';
   import Checkbox from '$components/Checkbox.svelte';
   import DropdownSmall from '$components/DropdownSmall.svelte';
   import Loader from '$components/Loader.svelte';
@@ -198,11 +199,18 @@
 
 <section>
   <header>
-    <a href="/">
+    <a
+      href="/"
+      onclick={() => {
+        window.location.assign('/');
+      }}
+    >
       <img src={logo} class="logo" />
     </a>
     <p>Compare and analyze Mutual Funds and Indexes with useful metrics!</p>
   </header>
+
+  <BucketManager canSave={orderedFunds.length > 0} />
 
   <FundSelector
     {mfTitles}
