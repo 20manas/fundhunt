@@ -2,6 +2,7 @@ import js from '@eslint/js';
 import comments from '@eslint-community/eslint-plugin-eslint-comments/configs';
 import preferEarlyReturn from '@regru/eslint-plugin-prefer-early-return';
 import tanstackQueryPlugin from '@tanstack/eslint-plugin-query';
+import {defineConfig} from 'eslint/config';
 import prettier from 'eslint-config-prettier';
 import functional from 'eslint-plugin-functional';
 import importXPlugin from 'eslint-plugin-import-x';
@@ -12,8 +13,7 @@ import ts from 'typescript-eslint';
 
 import svelteConfig from './svelte.config.js';
 
-/** @type {import('eslint').Linter.Config[]} */
-export default ts.config(
+export default defineConfig(
   {
     plugins: {
       'prefer-early-return': preferEarlyReturn,
@@ -35,10 +35,10 @@ export default ts.config(
   },
   ...svelte.configs['flat/recommended'],
   {
-    files: ['**/*.svelte'],
+    files: ['**/*.svelte', '**/*.svelte.ts', '**/*.svelte.js'],
     languageOptions: {
       parserOptions: {
-        extraFileExtensions: ['.svelte'],
+        extraFileExtensions: ['.svelte', '.svelte.ts', '.svelte.js'],
         parser: ts.parser,
         svelteConfig: svelteConfig,
         svelteFeatures: {

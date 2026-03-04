@@ -363,7 +363,7 @@
     <hr />
     <h2>Rolling Periods</h2>
     <div class="periods-list">
-      {#each PERIODS as period}
+      {#each PERIODS as period (period)}
         <Checkbox
           isChecked={selectedPeriods.has(period)}
           onChange={(isChecked: boolean) => {
@@ -409,7 +409,7 @@
         </tr>
       </thead>
       <tbody>
-        {#each $statsAPI.data.find(item => item.period === 'all-time')?.list ?? [] as row}
+        {#each $statsAPI.data.find(item => item.period === 'all-time')?.list ?? [] as row (row.value)}
           <tr>
             <td>{row.title}</td>
             <td>{row.startDate} to {row.endDate}</td>
@@ -420,7 +420,7 @@
     </table>
   {/if}
 
-  {#each $statsAPI.data.filter(item => item.period !== 'all-time') as stats}
+  {#each $statsAPI.data.filter(item => item.period !== 'all-time') as stats (stats.period)}
     <article class="chart-container">
       <Chart
         {showAggregates}

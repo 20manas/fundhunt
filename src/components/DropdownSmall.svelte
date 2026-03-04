@@ -163,7 +163,7 @@
       {:else if filteredItems.length === 0}
         <li class="notFoundText">No match found for &quot;{queryDebounced}&quot;</li>
       {:else}
-        {#each filteredItems as item}
+        {#each filteredItems as item (item.value)}
           <li
             class={clsx('item', item.isDisabled && '__disabled')}
             onclick={ev => {
