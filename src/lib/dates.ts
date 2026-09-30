@@ -103,7 +103,7 @@ const getEndOfMonthIndex = (dateStr: string, isMaximum = false) => {
     );
   }
 
-  if (isMaximum && !date.isSame(date.endOf('month'))) {
+  if (isMaximum && !date.isSame(date.endOf('month'), 'date')) {
     return index - 1;
   }
 
